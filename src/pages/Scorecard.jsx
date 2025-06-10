@@ -88,13 +88,19 @@ export default function Scorecard() {
   };
 
   const handleScoreChange = (playerId, holeIndex, value) => {
-    setScores(prev => ({
-      ...prev,
-      [playerId]: {
-        ...prev[playerId],
-        [holeIndex]: value
-      }
-    }));
+    setScores(prev => {
+      // Get the current scores array for this player, or create a new one
+      const currentPlayerScores = prev[playerId] || Array(18).fill('');
+      
+      // Create a new array with the updated score
+      const newPlayerScores = [...currentPlayerScores];
+      newPlayerScores[holeIndex] = value;
+      
+      return {
+        ...prev,
+        [playerId]: newPlayerScores
+      };
+    });
   };
 
   const handleSaveScorecard = async () => {
@@ -119,7 +125,7 @@ export default function Scorecard() {
   };
 
   const calculateTotal = (playerId, startHole, endHole) => {
-    const playerScores = scores[playerId] || {};
+    const playerScores = scores[playerId] || [];
     let total = 0;
     for (let i = startHole; i < endHole; i++) {
       const score = parseInt(playerScores[i], 10);
@@ -278,7 +284,8 @@ export default function Scorecard() {
                           {player?.name} {player?.surname}
                         </td>
                         {Array.from({ length: 18 }, (_, holeIndex) => {
-                          const value = scores[playerId]?.[holeIndex] || '';
+                          const playerScores = scores[playerId] || [];
+                          const value = playerScores[holeIndex] || '';
                           const par = holeData[holeIndex]?.par || 4;
                           const score = parseInt(value, 10);
                           
