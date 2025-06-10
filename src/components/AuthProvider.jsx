@@ -11,6 +11,16 @@ export const useAuth = () => {
   return context;
 };
 
+// Timeout wrapper for operations that might hang
+const withTimeout = (promise, timeoutMs = 10000, operation = 'Operation') => {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => 
+      setTimeout(() => reject(new Error(`${operation} timeout after ${timeoutMs}ms`)), timeoutMs)
+    )
+  ]);
+};
+
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -23,8 +33,14 @@ export default function AuthProvider({ children }) {
       console.log('🔄 Auth initialization starting...');
       try {
         console.log('📡 Calling auth.getCurrentUser()...');
-        // Get initial session
-        const { data: { user: authUser }, error } = await auth.getCurrentUser();
+        
+        // Add timeout to getCurrentUser
+        const { data: { user: authUser }, error } = await withTimeout(
+          auth.getCurrentUser(),
+          8000,
+          'getCurrentUser'
+        );
+        
         console.log('✅ auth.getCurrentUser() completed:', { 
           hasUser: !!authUser, 
           hasError: !!error,
@@ -50,7 +66,7 @@ export default function AuthProvider({ children }) {
         if (mounted) {
           console.log('🧹 Clearing potentially corrupted session...');
           try {
-            await auth.signOut();
+            await withTimeout(auth.signOut(), 5000, 'signOut');
             console.log('✅ Session cleared successfully');
           } catch (signOutError) {
             console.error('❌ Error clearing session:', signOutError);
@@ -104,10 +120,16 @@ export default function AuthProvider({ children }) {
   const loadUserProfile = async (userId, userMetadata = {}) => {
     console.log('📋 Loading user profile for:', userId);
     try {
-      const { data, error } = await db.getUserById(userId);
+      // Add timeout to database operations
+      const { data, error } = await withTimeout(
+        db.getUserById(userId),
+        8000,
+        'getUserById'
+      );
       
       if (error) {
         console.error('❌ Error loading user profile:', error);
+        // Don't throw here, just log and continue
         return;
       }
 
@@ -126,7 +148,12 @@ export default function AuthProvider({ children }) {
         };
         
         console.log('📝 Creating profile with data:', userData);
-        const { data: newProfile, error: createError } = await db.createUserProfile(userId, userData);
+        const { data: newProfile, error: createError } = await withTimeout(
+          db.createUserProfile(userId, userData),
+          8000,
+          'createUserProfile'
+        );
+        
         if (!createError && newProfile) {
           console.log('✅ User profile created successfully');
           setUserProfile(newProfile);
@@ -135,7 +162,13 @@ export default function AuthProvider({ children }) {
         }
       }
     } catch (error) {
-      console.error('❌ Error in loadUserProfile:', error);
+      console.error('❌ Error in loadUserProfile (possibly timeout):', error);
+      // If profile loading fails, don't block the auth flow
+      // Set a minimal profile or leave it null
+      if (error.message.includes('timeout')) {
+        console.log('⏰ Profile loading timed out, continuing without profile');
+        setUserProfile(null);
+      }
     }
   };
 
@@ -143,9 +176,16 @@ export default function AuthProvider({ children }) {
     console.log('🔐 Signing in user:', email);
     setLoading(true);
     try {
-      const { data, error } = await auth.signIn(email, password);
+      const { data, error } = await withTimeout(
+        auth.signIn(email, password),
+        10000,
+        'signIn'
+      );
       console.log('🔐 Sign in result:', { hasData: !!data, hasError: !!error });
       return { data, error };
+    } catch (error) {
+      console.error('❌ Sign in timeout or error:', error);
+      return { data: null, error: error };
     } finally {
       setLoading(false);
     }
@@ -155,9 +195,16 @@ export default function AuthProvider({ children }) {
     console.log('📝 Signing up user:', email);
     setLoading(true);
     try {
-      const { data, error } = await auth.signUp(email, password, userData);
+      const { data, error } = await withTimeout(
+        auth.signUp(email, password, userData),
+        10000,
+        'signUp'
+      );
       console.log('📝 Sign up result:', { hasData: !!data, hasError: !!error });
       return { data, error };
+    } catch (error) {
+      console.error('❌ Sign up timeout or error:', error);
+      return { data: null, error: error };
     } finally {
       setLoading(false);
     }
@@ -167,9 +214,16 @@ export default function AuthProvider({ children }) {
     console.log('🚪 Signing out user');
     setLoading(true);
     try {
-      const { error } = await auth.signOut();
+      const { error } = await withTimeout(
+        auth.signOut(),
+        5000,
+        'signOut'
+      );
       console.log('🚪 Sign out result:', { hasError: !!error });
       return { error };
+    } catch (error) {
+      console.error('❌ Sign out timeout or error:', error);
+      return { error: error };
     } finally {
       setLoading(false);
     }
@@ -180,7 +234,11 @@ export default function AuthProvider({ children }) {
     
     console.log('📝 Updating profile for:', user.id);
     try {
-      const { data, error } = await db.updateUser(user.id, updates);
+      const { data, error } = await withTimeout(
+        db.updateUser(user.id, updates),
+        8000,
+        'updateUser'
+      );
       if (!error && data) {
         console.log('✅ Profile updated successfully');
         setUserProfile(data);
@@ -195,7 +253,11 @@ export default function AuthProvider({ children }) {
   const promoteToAdmin = async (email) => {
     console.log('👑 Promoting user to admin:', email);
     try {
-      const { data, error } = await db.promoteToAdmin(email);
+      const { data, error } = await withTimeout(
+        db.promoteToAdmin(email),
+        8000,
+        'promoteToAdmin'
+      );
       if (!error && user) {
         console.log('✅ User promoted to admin, reloading profile');
         // Reload user profile to get updated admin status
