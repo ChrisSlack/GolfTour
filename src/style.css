@@ -1052,3 +1052,9 @@ main {
 .page.active {
     animation: fadeIn 0.3s ease-in-out;
 }
+.score-eagle{background-color:gold;}
+.score-birdie{background-color:var(--color-success);color:var(--color-btn-primary-text);}
+.score-par{background-color:transparent;}
+.score-bogey{background-color:#fff3cd;}
+.score-double{background-color:#f8d7da;}
+

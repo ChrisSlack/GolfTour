@@ -6,7 +6,8 @@ export default function Navigation({ current, onNavigate }) {
     { id: 'schedule', label: 'Schedule' },
     { id: 'courses', label: 'Golf Courses' },
     { id: 'fines', label: 'Banter & Fines' },
-    { id: 'friday', label: 'Friday Activities' }
+    { id: 'friday', label: 'Friday Activities' },
+    { id: 'scorecard', label: 'Scorecard' }
   ];
 
   return (
