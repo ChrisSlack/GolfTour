@@ -1,5 +1,6 @@
 import React from 'react';
 import Countdown from '../components/Countdown';
+import Leaderboard from '../components/Leaderboard';
 
 export default function Home() {
   return (
@@ -11,6 +12,12 @@ export default function Home() {
         </div>
       </div>
       <Countdown />
+      
+      {/* Leaderboard Dashboard */}
+      <div className="mt-8">
+        <Leaderboard />
+      </div>
+      
       <div className="card mt-8">
         <div className="card__body">
           <h3>Hotel</h3>
