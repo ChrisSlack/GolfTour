@@ -9,8 +9,15 @@ export default function Teams() {
   const [activeTour, setActiveTour] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedCaptain, setSelectedCaptain] = useState('');
+  const [newUserForm, setNewUserForm] = useState({
+    email: '',
+    name: '',
+    surname: '',
+    handicap: 18
+  });
 
   useEffect(() => {
     loadData();
@@ -52,6 +59,32 @@ export default function Teams() {
       }
     } catch (error) {
       console.error('Error creating team:', error);
+    }
+  };
+
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    try {
+      // Create a temporary user ID for the profile
+      const tempUserId = crypto.randomUUID();
+      
+      const { data, error } = await db.createUserProfile(tempUserId, newUserForm);
+      if (!error) {
+        setNewUserForm({
+          email: '',
+          name: '',
+          surname: '',
+          handicap: 18
+        });
+        setShowAddUserForm(false);
+        loadData(); // Reload users
+      } else {
+        console.error('Error adding user:', error);
+        alert('Error adding user: ' + error.message);
+      }
+    } catch (error) {
+      console.error('Error adding user:', error);
+      alert('Error adding user: ' + error.message);
     }
   };
 
@@ -110,15 +143,89 @@ export default function Teams() {
     <section className="page active" id="teams">
       <div className="flex justify-between items-center mb-8">
         <h2>Teams - {activeTour.name} {activeTour.year}</h2>
-        {isAdmin && (
-          <button
-            className="btn btn--primary"
-            onClick={() => setShowCreateForm(true)}
-          >
-            Create Team
-          </button>
-        )}
+        <div className="flex gap-4">
+          {isAdmin && (
+            <>
+              <button
+                className="btn btn--secondary"
+                onClick={() => setShowAddUserForm(true)}
+              >
+                Add User
+              </button>
+              <button
+                className="btn btn--primary"
+                onClick={() => setShowCreateForm(true)}
+              >
+                Create Team
+              </button>
+            </>
+          )}
+        </div>
       </div>
+
+      {showAddUserForm && (
+        <div className="card mb-8">
+          <div className="card__body">
+            <h3>Add New User</h3>
+            <form onSubmit={handleAddUser} className="mt-4">
+              <div className="form-group">
+                <label className="form-label">Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={newUserForm.email}
+                  onChange={(e) => setNewUserForm({...newUserForm, email: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">First Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={newUserForm.name}
+                  onChange={(e) => setNewUserForm({...newUserForm, name: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Last Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={newUserForm.surname}
+                  onChange={(e) => setNewUserForm({...newUserForm, surname: e.target.value})}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Handicap (0-54)</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={newUserForm.handicap}
+                  onChange={(e) => setNewUserForm({...newUserForm, handicap: parseInt(e.target.value)})}
+                  min="0"
+                  max="54"
+                  required
+                />
+              </div>
+              <div className="flex gap-4">
+                <button type="submit" className="btn btn--primary">
+                  Add User
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--secondary"
+                  onClick={() => setShowAddUserForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {showCreateForm && (
         <div className="card mb-8">
@@ -247,6 +354,49 @@ export default function Teams() {
           </div>
         </div>
       )}
+
+      {/* Users List */}
+      <div className="card mt-8">
+        <div className="card__body">
+          <h3>All Users ({users.length})</h3>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">Name</th>
+                  <th className="text-left p-2">Email</th>
+                  <th className="text-center p-2">Handicap</th>
+                  <th className="text-left p-2">Team</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map(user => {
+                  const userTeam = teams.find(team => 
+                    team.team_members?.some(member => member.user.id === user.id)
+                  );
+                  
+                  return (
+                    <tr key={user.id} className="border-b">
+                      <td className="p-2">{user.name} {user.surname}</td>
+                      <td className="p-2">{user.email}</td>
+                      <td className="p-2 text-center">{user.handicap}</td>
+                      <td className="p-2">
+                        {userTeam ? (
+                          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            {userTeam.name}
+                          </span>
+                        ) : (
+                          <span className="text-sm text-gray-500">No team</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }

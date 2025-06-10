@@ -265,7 +265,9 @@ export const db = {
 
     const { data, error } = await supabase
       .from('scores')
-      .upsert(scoreData)
+      .upsert(scoreData, {
+        onConflict: 'user_id,course_id,hole_number'
+      })
       .select();
     return { data, error };
   },
