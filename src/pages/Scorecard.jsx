@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import scorecards from '../data/scorecards';
+import { generateId } from '../utils/id';
 
 const STORAGE_KEY = 'golf_trip_scores';
 
@@ -17,7 +18,11 @@ export default function Scorecard() {
   const [scores, setScores] = useState(() => {
     try {
       const saved = localStorage.getItem(`${STORAGE_KEY}_scores`);
-      return saved ? JSON.parse(saved) : {};
+      const parsed = saved ? JSON.parse(saved) : {};
+      courseKeys.forEach(c => {
+        if (!parsed[c]) parsed[c] = {};
+      });
+      return parsed;
     } catch {
       return {};
     }
@@ -29,28 +34,55 @@ export default function Scorecard() {
     localStorage.setItem(`${STORAGE_KEY}_scores`, JSON.stringify(scores));
   }, [players, scores]);
 
+  useEffect(() => {
+    setScores(prev => {
+      if (prev[course]) return prev;
+      const updated = { ...prev, [course]: {} };
+      players.forEach(p => {
+        updated[course][p.id] = Array(18).fill('');
+      });
+      return updated;
+    });
+  }, [course, players]);
+
   const addPlayer = e => {
     e.preventDefault();
-    if (!name.trim()) return;
-    const id = Date.now().toString();
-    setPlayers(prev => [...prev, { id, name: name.trim() }]);
-    setScores(prev => ({ ...prev, [id]: Array(18).fill('') }));
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (players.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
+      setName('');
+      return;
+    }
+    const id = generateId();
+    setPlayers(prev => [...prev, { id, name: trimmed }]);
+    setScores(prev => {
+      const updated = { ...prev };
+      courseKeys.forEach(c => {
+        if (!updated[c]) updated[c] = {};
+        updated[c][id] = Array(18).fill('');
+      });
+      return updated;
+    });
     setName('');
   };
 
   const handleScoreChange = (pid, hole, value) => {
     setScores(prev => {
-      const playerScores = prev[pid] || Array(18).fill('');
+      const courseScores = prev[course] || {};
+      const playerScores = courseScores[pid] || Array(18).fill('');
       const updated = [...playerScores];
       updated[hole] = value;
-      return { ...prev, [pid]: updated };
+      return {
+        ...prev,
+        [course]: { ...courseScores, [pid]: updated }
+      };
     });
   };
 
-  const holeData = scorecards[course].holes;
+  const holeData = scorecards[course]?.holes || [];
 
   const calcTotal = (pid, start, end) => {
-    const playerScores = scores[pid] || [];
+    const playerScores = scores[course]?.[pid] || [];
     let total = 0;
     for (let i = start; i < end; i++) {
       const v = parseInt(playerScores[i], 10);
@@ -128,7 +160,7 @@ export default function Scorecard() {
                   <tr key={player.id}>
                     <td>{player.name}</td>
                     {holeData.map((h, i) => {
-                      const val = scores[player.id]?.[i] || '';
+                      const val = scores[course]?.[player.id]?.[i] || '';
                       let cls = 'score-par';
                       const num = parseInt(val,10);
                       if (!isNaN(num)) {

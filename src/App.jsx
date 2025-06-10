@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navigation from './components/Navigation';
 import Home from './pages/Home';
 import Schedule from './pages/Schedule';
@@ -8,7 +8,17 @@ import Friday from './pages/Friday';
 import Scorecard from './pages/Scorecard';
 
 export default function App() {
-  const [page, setPage] = useState('home');
+  const [page, setPage] = useState(() => window.location.hash.replace('#', '') || 'home');
+
+  useEffect(() => {
+    const handler = () => setPage(window.location.hash.replace('#', '') || 'home');
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+
+  useEffect(() => {
+    window.location.hash = page;
+  }, [page]);
 
   let content;
   switch (page) {
