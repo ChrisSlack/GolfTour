@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from './AuthProvider';
 
 export default function Navigation({ current, onNavigate, onAuthClick }) {
   const { user, userProfile, signOut } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const links = [
     { id: 'home', label: 'Home' },
@@ -19,30 +20,50 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
     await signOut();
   };
 
+  const handleNavClick = (linkId) => {
+    onNavigate && onNavigate(linkId);
+    setIsMobileMenuOpen(false); // Close mobile menu when navigating
+  };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
   return (
     <header className="site-header">
       <div className="container">
-        <div className="flex items-center justify-between">
+        <div className="header-content">
           <div className="logo">
             <h1><i className="fas fa-golf-ball"></i> Portugal Golf Trip 2025</h1>
           </div>
-          <nav className="main-nav">
-            <ul className="flex gap-8 items-center">
+          
+          {/* Mobile menu button */}
+          <button 
+            className="mobile-menu-btn"
+            onClick={toggleMobileMenu}
+            aria-label="Toggle navigation menu"
+          >
+            <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+          </button>
+
+          {/* Desktop navigation */}
+          <nav className="main-nav desktop-nav">
+            <ul className="nav-list">
               {links.map(link => (
                 <li key={link.id}>
                   <a
                     href={`#${link.id}`}
-                    onClick={() => onNavigate && onNavigate(link.id)}
+                    onClick={() => handleNavClick(link.id)}
                     className={`nav-link${current === link.id ? ' active' : ''}`}
                   >
                     {link.label}
                   </a>
                 </li>
               ))}
-              <li>
+              <li className="auth-section">
                 {user ? (
-                  <div className="flex items-center gap-4">
-                    <span className="text-sm">
+                  <div className="user-menu">
+                    <span className="user-greeting">
                       Welcome, {userProfile?.name || user.email}
                     </span>
                     <button
@@ -64,6 +85,50 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
             </ul>
           </nav>
         </div>
+
+        {/* Mobile navigation overlay */}
+        {isMobileMenuOpen && (
+          <div className="mobile-menu-overlay" onClick={() => setIsMobileMenuOpen(false)} />
+        )}
+
+        {/* Mobile navigation menu */}
+        <nav className={`main-nav mobile-nav ${isMobileMenuOpen ? 'mobile-nav--open' : ''}`}>
+          <ul className="nav-list">
+            {links.map(link => (
+              <li key={link.id}>
+                <a
+                  href={`#${link.id}`}
+                  onClick={() => handleNavClick(link.id)}
+                  className={`nav-link${current === link.id ? ' active' : ''}`}
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))}
+            <li className="auth-section">
+              {user ? (
+                <div className="user-menu">
+                  <span className="user-greeting">
+                    Welcome, {userProfile?.name || user.email}
+                  </span>
+                  <button
+                    onClick={handleSignOut}
+                    className="btn btn--secondary btn--sm"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={onAuthClick}
+                  className="btn btn--primary btn--sm"
+                >
+                  Sign In
+                </button>
+              )}
+            </li>
+          </ul>
+        </nav>
       </div>
     </header>
   );
