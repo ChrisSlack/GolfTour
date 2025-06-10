@@ -47,7 +47,7 @@ export default function Friday() {
   };
 
   return (
-    <section className="page" id="friday">
+    <section className="page active" id="friday">
       <h2>Friday Activities</h2>
       {activities.map(cat => (
         <div key={cat.category} className="mt-8">

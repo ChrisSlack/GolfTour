@@ -3,7 +3,7 @@ import schedule from '../data/schedule';
 
 export default function Schedule() {
   return (
-    <section className="page" id="schedule">
+    <section className="page active" id="schedule">
       <h2>Schedule</h2>
       <div className="card mt-8">
         <div className="card__body schedule-table-container">

@@ -38,7 +38,7 @@ export default function Fines() {
   const total = fines.reduce((sum, f) => sum + f.amount, 0);
 
   return (
-    <section className="page" id="fines">
+    <section className="page active" id="fines">
       <h2>Banter & Fines</h2>
       <form className="mt-8" onSubmit={addFine}>
         <div className="form-group">
