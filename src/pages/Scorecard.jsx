@@ -17,6 +17,7 @@ export default function Scorecard() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showNet, setShowNet] = useState(false);
+  const [scoringMode, setScoringMode] = useState('stroke'); // 'stroke' or 'stableford'
 
   useEffect(() => {
     loadData();
@@ -46,6 +47,46 @@ export default function Scorecard() {
     // Under USGA rules: Net Score = Gross Score - Course Handicap
     // Minimum net score is 1 (can't go below 1)
     return Math.max(1, grossScore - courseHandicap);
+  };
+
+  // Calculate Stableford points based on net score vs par
+  const calculateStablefordPoints = (netScore, par) => {
+    const diff = netScore - par;
+    if (diff <= -3) return 5; // Albatross/Double Eagle
+    if (diff === -2) return 4; // Eagle
+    if (diff === -1) return 3; // Birdie
+    if (diff === 0) return 2;  // Par
+    if (diff === 1) return 1;  // Bogey
+    return 0; // Double bogey or worse
+  };
+
+  // Allocate handicap strokes to holes based on stroke index
+  const allocateHandicapStrokes = (courseHandicap, holeData) => {
+    const strokesPerHole = Array(18).fill(0);
+    
+    if (courseHandicap <= 0) return strokesPerHole;
+    
+    // Sort holes by stroke index to allocate strokes
+    const holesWithIndex = holeData.map((hole, index) => ({
+      holeNumber: index,
+      strokeIndex: hole.hcp || (index + 1)
+    })).sort((a, b) => a.strokeIndex - b.strokeIndex);
+    
+    // Allocate strokes
+    let remainingStrokes = courseHandicap;
+    
+    // First round: give one stroke to holes based on stroke index
+    for (let i = 0; i < Math.min(18, remainingStrokes); i++) {
+      strokesPerHole[holesWithIndex[i].holeNumber] = 1;
+    }
+    remainingStrokes -= Math.min(18, remainingStrokes);
+    
+    // Second round: give second stroke if handicap > 18
+    for (let i = 0; i < Math.min(18, remainingStrokes); i++) {
+      strokesPerHole[holesWithIndex[i].holeNumber] = 2;
+    }
+    
+    return strokesPerHole;
   };
 
   // Get course key from course name
@@ -216,7 +257,7 @@ export default function Scorecard() {
     }
   };
 
-  const calculateTotal = (playerId, startHole, endHole, useNet = false) => {
+  const calculateTotal = (playerId, startHole, endHole, useNet = false, useStableford = false) => {
     const playerScores = scores[playerId] || [];
     const player = users.find(u => u.id === playerId);
     
@@ -224,6 +265,8 @@ export default function Scorecard() {
     
     const courseKey = getCourseKey(selectedCourse?.name || '');
     const courseHandicap = calculateCourseHandicap(player.handicap, courseKey);
+    const holeData = getHoleData();
+    const handicapStrokes = allocateHandicapStrokes(courseHandicap, holeData);
     
     let total = 0;
     let validScores = 0;
@@ -231,7 +274,14 @@ export default function Scorecard() {
     for (let i = startHole; i < endHole; i++) {
       const grossScore = parseInt(playerScores[i], 10);
       if (!isNaN(grossScore)) {
-        if (useNet) {
+        if (useStableford) {
+          // Calculate Stableford points for this hole
+          const par = holeData[i]?.par || 4;
+          const strokesReceived = handicapStrokes[i] || 0;
+          const netScore = Math.max(1, grossScore - strokesReceived);
+          const points = calculateStablefordPoints(netScore, par);
+          total += points;
+        } else if (useNet) {
           // For net scoring, we need to calculate the total gross first, then apply handicap
           total += grossScore;
         } else {
@@ -243,7 +293,7 @@ export default function Scorecard() {
     
     if (validScores === 0) return '';
     
-    if (useNet) {
+    if (useNet && !useStableford) {
       // Calculate net total using USGA method
       const netTotal = calculateNetScore(total, Math.round(courseHandicap * (validScores / 18)));
       return netTotal;
@@ -359,16 +409,46 @@ export default function Scorecard() {
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-4">
                 <h3>{selectedCourse.name}</h3>
-                <div className="flex items-center gap-2">
-                  <label className="form-label mb-0">
-                    <input
-                      type="checkbox"
-                      checked={showNet}
-                      onChange={(e) => setShowNet(e.target.checked)}
-                      className="mr-2"
-                    />
-                    Show Net Scores
-                  </label>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <label className="form-label mb-0">
+                      <input
+                        type="radio"
+                        name="scoringMode"
+                        value="stroke"
+                        checked={scoringMode === 'stroke'}
+                        onChange={(e) => setScoringMode(e.target.value)}
+                        className="mr-2"
+                      />
+                      Stroke Play
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="form-label mb-0">
+                      <input
+                        type="radio"
+                        name="scoringMode"
+                        value="stableford"
+                        checked={scoringMode === 'stableford'}
+                        onChange={(e) => setScoringMode(e.target.value)}
+                        className="mr-2"
+                      />
+                      Stableford
+                    </label>
+                  </div>
+                  {scoringMode === 'stroke' && (
+                    <div className="flex items-center gap-2">
+                      <label className="form-label mb-0">
+                        <input
+                          type="checkbox"
+                          checked={showNet}
+                          onChange={(e) => setShowNet(e.target.checked)}
+                          className="mr-2"
+                        />
+                        Show Net Scores
+                      </label>
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex gap-4">
@@ -390,15 +470,25 @@ export default function Scorecard() {
             </div>
 
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-sm text-yellow-800">
-                <strong>USGA Net Scoring:</strong> Net Score = Gross Score - Course Handicap (minimum 1)<br/>
-                <strong>Course Handicap</strong> = Handicap Index × (Slope Rating ÷ 113)<br/>
-                {courseData && (
-                  <>
-                    <strong>This Course:</strong> Slope Rating {courseData.slopeRating}, Course Rating {courseData.courseRating}
-                  </>
-                )}
-              </p>
+              {scoringMode === 'stableford' ? (
+                <p className="text-sm text-yellow-800">
+                  <strong>Stableford Scoring:</strong><br/>
+                  • <strong>Points:</strong> Albatross=5, Eagle=4, Birdie=3, Par=2, Bogey=1, Double+=0<br/>
+                  • <strong>Net Score per Hole:</strong> Gross Strokes - Handicap Strokes on that hole<br/>
+                  • <strong>Handicap Strokes:</strong> Allocated by hole difficulty (Stroke Index)<br/>
+                  • <strong>Course Handicap:</strong> {courseData ? `${Math.round(18 * (courseData.slopeRating / 113))} strokes for 18 HCP` : 'Calculated per player'}
+                </p>
+              ) : (
+                <p className="text-sm text-yellow-800">
+                  <strong>USGA Net Scoring:</strong> Net Score = Gross Score - Course Handicap (minimum 1)<br/>
+                  <strong>Course Handicap</strong> = Handicap Index × (Slope Rating ÷ 113)<br/>
+                  {courseData && (
+                    <>
+                      <strong>This Course:</strong> Slope Rating {courseData.slopeRating}, Course Rating {courseData.courseRating}
+                    </>
+                  )}
+                </p>
+              )}
             </div>
 
             <div className="scorecard-table-container">
@@ -436,14 +526,12 @@ export default function Scorecard() {
                   {selectedPlayers.map(playerId => {
                     const player = users.find(u => u.id === playerId);
                     const courseHandicap = player ? calculateCourseHandicap(player.handicap, courseKey) : 0;
+                    const handicapStrokes = allocateHandicapStrokes(courseHandicap, holeData);
                     
-                    // Calculate totals
-                    const outGross = calculateTotal(playerId, 0, 9, false);
-                    const inGross = calculateTotal(playerId, 9, 18, false);
-                    const totalGross = outGross && inGross ? outGross + inGross : '';
-                    
-                    // Calculate net total using USGA method
-                    const totalNet = totalGross ? calculateNetScore(totalGross, courseHandicap) : '';
+                    // Calculate totals based on scoring mode
+                    const outTotal = calculateTotal(playerId, 0, 9, showNet && scoringMode === 'stroke', scoringMode === 'stableford');
+                    const inTotal = calculateTotal(playerId, 9, 18, showNet && scoringMode === 'stroke', scoringMode === 'stableford');
+                    const grandTotal = outTotal && inTotal ? outTotal + inTotal : '';
 
                     return (
                       <tr key={playerId}>
@@ -459,20 +547,35 @@ export default function Scorecard() {
                           const grossScore = parseInt(grossValue, 10);
                           const holeNumber = holeIndex + 1;
                           const extras = scoreExtras[playerId]?.[holeNumber] || {};
+                          const strokesReceived = handicapStrokes[holeIndex] || 0;
                           
                           let className = 'score-par';
+                          let displayValue = grossValue;
                           
                           if (!isNaN(grossScore)) {
                             const holeInfo = holeData[holeIndex];
                             const par = holeInfo?.par || 4;
                             
-                            // Color based on gross score vs par (net coloring would be too complex per hole)
-                            const diff = grossScore - par;
-                            if (diff <= -2) className = 'score-eagle';
-                            else if (diff === -1) className = 'score-birdie';
-                            else if (diff === 0) className = 'score-par';
-                            else if (diff === 1) className = 'score-bogey';
-                            else if (diff >= 2) className = 'score-double';
+                            if (scoringMode === 'stableford') {
+                              // For Stableford, show points and color based on points
+                              const netScore = Math.max(1, grossScore - strokesReceived);
+                              const points = calculateStablefordPoints(netScore, par);
+                              displayValue = `${grossScore} (${points}pts)`;
+                              
+                              if (points >= 4) className = 'score-eagle';
+                              else if (points === 3) className = 'score-birdie';
+                              else if (points === 2) className = 'score-par';
+                              else if (points === 1) className = 'score-bogey';
+                              else className = 'score-double';
+                            } else {
+                              // Color based on gross score vs par (net coloring would be too complex per hole)
+                              const diff = grossScore - par;
+                              if (diff <= -2) className = 'score-eagle';
+                              else if (diff === -1) className = 'score-birdie';
+                              else if (diff === 0) className = 'score-par';
+                              else if (diff === 1) className = 'score-bogey';
+                              else if (diff >= 2) className = 'score-double';
+                            }
                           }
 
                           return (
@@ -488,6 +591,11 @@ export default function Scorecard() {
                                   max="12"
                                   placeholder="1-12"
                                 />
+                                {scoringMode === 'stableford' && strokesReceived > 0 && (
+                                  <div className="text-xs text-gray-600">
+                                    +{strokesReceived}
+                                  </div>
+                                )}
                                 <div className="flex gap-1">
                                   <label className="flex items-center text-xs cursor-pointer" title="3-Putt">
                                     <input
@@ -507,23 +615,36 @@ export default function Scorecard() {
                                       className="mr-1"
                                       style={{ transform: 'scale(0.8)' }}
                                     />
-                                    🎯
+                                    <span style={{ 
+                                      display: 'inline-block',
+                                      width: '8px',
+                                      height: '8px',
+                                      borderRadius: '50%',
+                                      border: '1px solid red',
+                                      backgroundColor: 'transparent'
+                                    }}></span>
                                   </label>
                                 </div>
                               </div>
                             </td>
                           );
                         })}
-                        <td className="font-bold">{outGross}</td>
-                        <td className="font-bold">{inGross}</td>
+                        <td className="font-bold">{outTotal}</td>
+                        <td className="font-bold">{inTotal}</td>
                         <td className="font-bold">
-                          {showNet ? (
+                          {scoringMode === 'stableford' ? (
                             <div>
-                              <div>Net: {totalNet}</div>
-                              <div className="text-xs text-gray-600">Gross: {totalGross}</div>
+                              <div>{grandTotal} pts</div>
+                            </div>
+                          ) : showNet ? (
+                            <div>
+                              <div>Net: {grandTotal}</div>
+                              <div className="text-xs text-gray-600">
+                                Gross: {calculateTotal(playerId, 0, 18, false, false)}
+                              </div>
                             </div>
                           ) : (
-                            totalGross
+                            grandTotal
                           )}
                         </td>
                       </tr>

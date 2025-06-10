@@ -49,9 +49,6 @@ export default function Leaderboard() {
     const stats = {
       eagles: 0,
       birdies: 0,
-      pars: 0,
-      bogeys: 0,
-      doubleBogeys: 0,
       threePutts: 0,
       rings: 0
     };
@@ -64,12 +61,9 @@ export default function Leaderboard() {
       const strokes = score.strokes;
       const diff = strokes - par;
 
-      // Count score types
+      // Count only eagles and birdies as requested
       if (diff <= -2) stats.eagles++;
       else if (diff === -1) stats.birdies++;
-      else if (diff === 0) stats.pars++;
-      else if (diff === 1) stats.bogeys++;
-      else if (diff >= 2) stats.doubleBogeys++;
 
       // Count extras
       if (score.three_putt) stats.threePutts++;
@@ -125,9 +119,6 @@ export default function Leaderboard() {
           totalStats: {
             eagles: 0,
             birdies: 0,
-            pars: 0,
-            bogeys: 0,
-            doubleBogeys: 0,
             threePutts: 0,
             rings: 0
           }
@@ -147,9 +138,6 @@ export default function Leaderboard() {
             totalStats: {
               eagles: 0,
               birdies: 0,
-              pars: 0,
-              bogeys: 0,
-              doubleBogeys: 0,
               threePutts: 0,
               rings: 0
             }
@@ -327,7 +315,7 @@ export default function Leaderboard() {
             • <strong>Course Handicap</strong> = Handicap Index × (Slope Rating ÷ 113)<br/>
             • <strong>Net Score</strong> = Gross Score - Course Handicap (minimum 1)<br/>
             • Course ratings: Morgado (Slope: 129), Amendoeira (Slope: 142), Quinta do Lago (Slope: 139)<br/>
-            • <strong>Statistics:</strong> 🦅 Eagles, 🐦 Birdies, ⚪ Pars, 🟡 Bogeys, 🔴 Double+, 3P = 3-Putts, 🎯 = Rings
+            • <strong>Statistics:</strong> 🦅 Eagles, 🐦 Birdies, 3P = 3-Putts, ⭕ = Rings (Hit Pin)
           </p>
         </div>
 
@@ -362,7 +350,7 @@ export default function Leaderboard() {
                     Team Total ({showNet ? 'Net' : 'Gross'})
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
-                    🦅{team.totalStats.eagles} 🐦{team.totalStats.birdies} ⚪{team.totalStats.pars} 🟡{team.totalStats.bogeys} 🔴{team.totalStats.doubleBogeys} | 3P:{team.totalStats.threePutts} 🎯{team.totalStats.rings}
+                    🦅{team.totalStats.eagles} 🐦{team.totalStats.birdies} | 3P:{team.totalStats.threePutts} ⭕{team.totalStats.rings}
                   </div>
                 </div>
               </div>
@@ -443,10 +431,10 @@ export default function Leaderboard() {
                                         </div>
                                       )}
                                       <div className="text-xs text-gray-500">
-                                        🦅{courseScore.stats.eagles} 🐦{courseScore.stats.birdies} ⚪{courseScore.stats.pars} 🟡{courseScore.stats.bogeys} 🔴{courseScore.stats.doubleBogeys}
+                                        🦅{courseScore.stats.eagles} 🐦{courseScore.stats.birdies}
                                       </div>
                                       <div className="text-xs text-gray-500">
-                                        3P:{courseScore.stats.threePutts} 🎯{courseScore.stats.rings}
+                                        3P:{courseScore.stats.threePutts} ⭕{courseScore.stats.rings}
                                       </div>
                                     </div>
                                   ) : '-'}
@@ -471,10 +459,10 @@ export default function Leaderboard() {
                                     </div>
                                   )}
                                   <div className="text-xs text-gray-500">
-                                    🦅{member.scores[0].stats.eagles} 🐦{member.scores[0].stats.birdies} ⚪{member.scores[0].stats.pars} 🟡{member.scores[0].stats.bogeys} 🔴{member.scores[0].stats.doubleBogeys}
+                                    🦅{member.scores[0].stats.eagles} 🐦{member.scores[0].stats.birdies}
                                   </div>
                                   <div className="text-xs text-gray-500">
-                                    3P:{member.scores[0].stats.threePutts} 🎯{member.scores[0].stats.rings}
+                                    3P:{member.scores[0].stats.threePutts} ⭕{member.scores[0].stats.rings}
                                   </div>
                                 </div>
                               ) : '-'}
@@ -490,9 +478,8 @@ export default function Leaderboard() {
                           </td>
                           <td className="p-2 text-center">
                             <div className="text-xs">
-                              <div>🦅{member.totalStats.eagles} 🐦{member.totalStats.birdies} ⚪{member.totalStats.pars}</div>
-                              <div>🟡{member.totalStats.bogeys} 🔴{member.totalStats.doubleBogeys}</div>
-                              <div>3P:{member.totalStats.threePutts} 🎯{member.totalStats.rings}</div>
+                              <div>🦅{member.totalStats.eagles} 🐦{member.totalStats.birdies}</div>
+                              <div>3P:{member.totalStats.threePutts} ⭕{member.totalStats.rings}</div>
                             </div>
                           </td>
                         </tr>
