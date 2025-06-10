@@ -11,6 +11,83 @@ export default function Home() {
         </div>
       </div>
       <Countdown />
+      <div className="card mt-8">
+        <div className="card__body schedule-table-container">
+          <h3>Course Metrics</h3>
+          <table className="summary-table mt-4">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th><a href="#courses">NAU Morgado</a></th>
+                <th><a href="#courses">Amendoeira Faldo</a></th>
+                <th><a href="#courses">Quinta do Lago South</a></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Total Length (White/Black Tees)</td>
+                <td>6,399m</td>
+                <td>6,598m</td>
+                <td>6,488m</td>
+              </tr>
+              <tr>
+                <td>Longest Hole</td>
+                <td>535m (Par 5, Hole 3)</td>
+                <td>613m (Par 5, Hole 13)</td>
+                <td>510m (Par 5, Hole 17)</td>
+              </tr>
+              <tr>
+                <td>Shortest Hole</td>
+                <td>166m (Par 3, Hole 11)</td>
+                <td>138m (Par 3, Hole 16)</td>
+                <td>171m (Par 3, Hole 4)</td>
+              </tr>
+              <tr>
+                <td>Average Green Size</td>
+                <td>600m²</td>
+                <td>550m²</td>
+                <td>650m²</td>
+              </tr>
+              <tr>
+                <td>Course Rating (Black)</td>
+                <td>72.7</td>
+                <td>74.5</td>
+                <td>73.7</td>
+              </tr>
+              <tr>
+                <td>Slope Rating (Black)</td>
+                <td>129</td>
+                <td>142</td>
+                <td>139</td>
+              </tr>
+              <tr>
+                <td>Total Bunkers</td>
+                <td>85+ (Scottish-style)</td>
+                <td>70+ (Desert scrub)</td>
+                <td>60+ (Strategic placement)</td>
+              </tr>
+              <tr>
+                <td>Water Hazards</td>
+                <td>4 lakes</td>
+                <td>5 watercourses</td>
+                <td>3 lakes (incl. Hole 15)</td>
+              </tr>
+              <tr>
+                <td>Signature Hole</td>
+                <td>18th (Par 4, elevated tee)</td>
+                <td>18th (Par 5, narrow fairway)</td>
+                <td>15th (Par 3 over lake)</td>
+              </tr>
+              <tr>
+                <td>Year Opened</td>
+                <td>2003</td>
+                <td>2008</td>
+                <td>1974</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
   );
 }
