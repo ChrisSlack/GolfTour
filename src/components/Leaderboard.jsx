@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/supabase';
+import courseRatings from '../data/courseRatings';
 
 export default function Leaderboard() {
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -13,29 +14,34 @@ export default function Leaderboard() {
     loadLeaderboardData();
   }, [selectedCourse, showNet]);
 
-  // Calculate net score for a hole based on handicap allocation
-  const calculateNetScore = (grossScore, holeStrokeIndex, courseHandicap) => {
-    let handicapStrokes = 0;
-    
-    // Allocate handicap strokes based on stroke index
-    if (courseHandicap >= holeStrokeIndex) {
-      handicapStrokes = 1;
+  // Calculate course handicap using USGA formula
+  const calculateCourseHandicap = (handicapIndex, courseKey) => {
+    const courseData = courseRatings[courseKey];
+    if (!courseData) {
+      // Fallback to simplified calculation if course data not found
+      return Math.round(handicapIndex);
     }
-    
-    // If handicap > 18, allocate second strokes
-    if (courseHandicap > 18 && holeStrokeIndex <= (courseHandicap - 18)) {
-      handicapStrokes = 2;
-    }
-    
-    return Math.max(1, grossScore - handicapStrokes);
+
+    // USGA Formula: Course Handicap = Handicap Index × (Slope Rating ÷ 113)
+    // Note: We're not adding (Course Rating - Par) as it's typically used for different tee calculations
+    const courseHandicap = handicapIndex * (courseData.slopeRating / 113);
+    return Math.round(courseHandicap);
   };
 
-  // Calculate course handicap (simplified - using handicap index directly for now)
-  const calculateCourseHandicap = (handicapIndex) => {
-    // Simplified calculation - in reality this would use slope rating and course rating
-    // Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating – Par)
-    // For now, we'll use the handicap index directly, rounded to nearest whole number
-    return Math.round(handicapIndex);
+  // Calculate net score using USGA method (simple subtraction)
+  const calculateNetScore = (grossScore, courseHandicap) => {
+    // Under USGA rules: Net Score = Gross Score - Course Handicap
+    // Minimum net score is 1 (can't go below 1)
+    return Math.max(1, grossScore - courseHandicap);
+  };
+
+  // Get course key from course name
+  const getCourseKey = (courseName) => {
+    const name = courseName.toLowerCase();
+    if (name.includes('morgado')) return 'morgado';
+    if (name.includes('amendoeira') || name.includes('faldo')) return 'amendoeira';
+    if (name.includes('quinta') || name.includes('lago')) return 'quintadolago';
+    return null;
   };
 
   const loadLeaderboardData = async () => {
@@ -96,43 +102,31 @@ export default function Leaderboard() {
             coursesPlayed: 0
           };
 
-          // Calculate course handicap for this player
-          const courseHandicap = calculateCourseHandicap(member.user.handicap);
-
           // Get scores for each course
           for (const course of coursesToQuery) {
             const { data: scoresData } = await db.getScores(course.id, member.user.id);
             
             if (scoresData && scoresData.length > 0) {
               const coursePar = course.par || 72;
+              const courseKey = getCourseKey(course.name);
+              
+              // Calculate course handicap for this specific course
+              const courseHandicap = calculateCourseHandicap(member.user.handicap, courseKey);
               
               // Calculate gross total
               const courseGrossTotal = scoresData.reduce((sum, score) => sum + score.strokes, 0);
               
-              // Calculate net total by applying handicap to each hole
-              let courseNetTotal = 0;
-              
-              // Get hole data for stroke indexes
-              const holeData = course.holes || [];
-              
-              // Sort scores by hole number to ensure proper order
-              const sortedScores = [...scoresData].sort((a, b) => a.hole_number - b.hole_number);
-              
-              for (const score of sortedScores) {
-                const holeIndex = score.hole_number - 1;
-                const holeInfo = holeData[holeIndex];
-                const strokeIndex = holeInfo?.hcp || score.hole_number; // Fallback to hole number if no stroke index
-                
-                const netScore = calculateNetScore(score.strokes, strokeIndex, courseHandicap);
-                courseNetTotal += netScore;
-              }
+              // Calculate net total using USGA method
+              const courseNetTotal = calculateNetScore(courseGrossTotal, courseHandicap);
               
               memberData.scores.push({
                 courseId: course.id,
                 courseName: course.name,
+                courseKey: courseKey,
                 grossTotal: courseGrossTotal,
                 netTotal: courseNetTotal,
                 par: coursePar,
+                courseHandicap: courseHandicap,
                 grossToPar: courseGrossTotal - coursePar,
                 netToPar: courseNetTotal - coursePar
               });
@@ -262,10 +256,10 @@ export default function Leaderboard() {
 
         <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
           <p className="text-sm text-yellow-800">
-            <strong>Scoring Explanation:</strong><br/>
-            • <strong>Gross Score:</strong> Total strokes taken<br/>
-            • <strong>Net Score:</strong> Gross score minus handicap strokes allocated per hole based on stroke index<br/>
-            • Handicap strokes are allocated to holes based on their difficulty ranking (stroke index 1-18)
+            <strong>USGA Net Scoring:</strong><br/>
+            • <strong>Course Handicap</strong> = Handicap Index × (Slope Rating ÷ 113)<br/>
+            • <strong>Net Score</strong> = Gross Score - Course Handicap (minimum 1)<br/>
+            • Course ratings: Morgado (Slope: 129), Amendoeira (Slope: 142), Quinta do Lago (Slope: 139)
           </p>
         </div>
 
@@ -307,15 +301,36 @@ export default function Leaderboard() {
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-2">Player</th>
-                      <th className="text-center p-2">Handicap</th>
+                      <th className="text-center p-2">HCP Index</th>
                       {selectedCourse === 'all' ? (
-                        courses.map(course => (
-                          <th key={course.id} className="text-center p-2 min-w-24">
-                            {course.name.split(' ')[0]}
-                          </th>
-                        ))
+                        courses.map(course => {
+                          const courseKey = getCourseKey(course.name);
+                          const courseData = courseRatings[courseKey];
+                          return (
+                            <th key={course.id} className="text-center p-2 min-w-24">
+                              {course.name.split(' ')[0]}
+                              {courseData && (
+                                <div className="text-xs text-gray-500">
+                                  Slope: {courseData.slopeRating}
+                                </div>
+                              )}
+                            </th>
+                          );
+                        })
                       ) : (
-                        <th className="text-center p-2">{showNet ? 'Net' : 'Gross'} Score</th>
+                        <th className="text-center p-2">
+                          {showNet ? 'Net' : 'Gross'} Score
+                          {selectedCourse !== 'all' && (() => {
+                            const course = courses.find(c => c.id === selectedCourse);
+                            const courseKey = getCourseKey(course?.name || '');
+                            const courseData = courseRatings[courseKey];
+                            return courseData ? (
+                              <div className="text-xs text-gray-500">
+                                Slope: {courseData.slopeRating}
+                              </div>
+                            ) : null;
+                          })()}
+                        </th>
                       )}
                       <th className="text-center p-2 font-bold">Total ({showNet ? 'Net' : 'Gross'})</th>
                     </tr>
@@ -340,26 +355,45 @@ export default function Leaderboard() {
                               const courseScore = member.scores.find(s => s.courseId === course.id);
                               return (
                                 <td key={course.id} className="p-2 text-center">
-                                  {courseScore ? formatScore(
-                                    courseScore.grossTotal, 
-                                    courseScore.netTotal, 
-                                    courseScore.par, 
-                                    showNet
+                                  {courseScore ? (
+                                    <div>
+                                      <div>
+                                        {formatScore(
+                                          courseScore.grossTotal, 
+                                          courseScore.netTotal, 
+                                          courseScore.par, 
+                                          showNet
+                                        )}
+                                      </div>
+                                      {showNet && courseScore.courseHandicap && (
+                                        <div className="text-xs text-gray-500">
+                                          CH: {courseScore.courseHandicap}
+                                        </div>
+                                      )}
+                                    </div>
                                   ) : '-'}
                                 </td>
                               );
                             })
                           ) : (
                             <td className="p-2 text-center">
-                              {member.scores.length > 0 
-                                ? formatScore(
-                                    member.scores[0].grossTotal, 
-                                    member.scores[0].netTotal, 
-                                    member.scores[0].par, 
-                                    showNet
-                                  )
-                                : '-'
-                              }
+                              {member.scores.length > 0 ? (
+                                <div>
+                                  <div>
+                                    {formatScore(
+                                      member.scores[0].grossTotal, 
+                                      member.scores[0].netTotal, 
+                                      member.scores[0].par, 
+                                      showNet
+                                    )}
+                                  </div>
+                                  {showNet && member.scores[0].courseHandicap && (
+                                    <div className="text-xs text-gray-500">
+                                      Course HCP: {member.scores[0].courseHandicap}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : '-'}
                             </td>
                           )}
                           <td className="p-2 text-center font-bold">
