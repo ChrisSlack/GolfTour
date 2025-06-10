@@ -17,27 +17,58 @@ export default function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    auth.getCurrentUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) {
-        loadUserProfile(user.id);
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { user: authUser } } = await auth.getCurrentUser();
+        
+        if (!mounted) return;
+
+        if (authUser) {
+          setUser(authUser);
+          await loadUserProfile(authUser.id);
+        } else {
+          setUser(null);
+          setUserProfile(null);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setUser(null);
+          setUserProfile(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    });
+    };
+
+    // Initialize auth
+    initializeAuth();
 
     // Listen for auth changes
     const { data: { subscription } } = auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await loadUserProfile(session.user.id);
+      if (!mounted) return;
+
+      const authUser = session?.user ?? null;
+      setUser(authUser);
+
+      if (authUser) {
+        await loadUserProfile(authUser.id);
       } else {
         setUserProfile(null);
       }
+      
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const loadUserProfile = async (userId) => {
@@ -49,24 +80,28 @@ export default function AuthProvider({ children }) {
         return;
       }
 
-      if (!data) {
-        // User profile doesn't exist, create it
-        const authUser = await auth.getCurrentUser();
-        if (authUser.data?.user) {
+      if (data) {
+        setUserProfile(data);
+      } else {
+        // Profile doesn't exist, create a minimal one
+        console.log('Creating user profile for:', userId);
+        const { data: authUser } = await auth.getCurrentUser();
+        
+        if (authUser?.user) {
           const userData = {
-            email: authUser.data.user.email,
-            name: authUser.data.user.user_metadata?.name || '',
-            surname: authUser.data.user.user_metadata?.surname || '',
-            handicap: authUser.data.user.user_metadata?.handicap || 18
+            email: authUser.user.email,
+            name: authUser.user.user_metadata?.name || '',
+            surname: authUser.user.user_metadata?.surname || '',
+            handicap: parseInt(authUser.user.user_metadata?.handicap) || 18
           };
           
           const { data: newProfile, error: createError } = await db.createUserProfile(userId, userData);
           if (!createError && newProfile) {
             setUserProfile(newProfile);
+          } else {
+            console.error('Error creating user profile:', createError);
           }
         }
-      } else {
-        setUserProfile(data);
       }
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
@@ -74,39 +109,62 @@ export default function AuthProvider({ children }) {
   };
 
   const signIn = async (email, password) => {
-    const { data, error } = await auth.signIn(email, password);
-    return { data, error };
+    setLoading(true);
+    try {
+      const { data, error } = await auth.signIn(email, password);
+      return { data, error };
+    } finally {
+      // Don't set loading to false here, let the auth state change handle it
+    }
   };
 
   const signUp = async (email, password, userData) => {
-    const { data, error } = await auth.signUp(email, password, userData);
-    return { data, error };
+    setLoading(true);
+    try {
+      const { data, error } = await auth.signUp(email, password, userData);
+      return { data, error };
+    } finally {
+      // Don't set loading to false here, let the auth state change handle it
+    }
   };
 
   const signOut = async () => {
-    const { error } = await auth.signOut();
-    return { error };
+    setLoading(true);
+    try {
+      const { error } = await auth.signOut();
+      return { error };
+    } finally {
+      // Don't set loading to false here, let the auth state change handle it
+    }
   };
 
   const updateProfile = async (updates) => {
     if (!user) return { error: 'No user logged in' };
     
-    const { data, error } = await db.updateUser(user.id, updates);
-    if (!error && data) {
-      setUserProfile(data);
+    try {
+      const { data, error } = await db.updateUser(user.id, updates);
+      if (!error && data) {
+        setUserProfile(data);
+      }
+      return { data, error };
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return { error: error.message };
     }
-    return { data, error };
   };
 
   const promoteToAdmin = async (email) => {
-    const { data, error } = await db.promoteToAdmin(email);
-    if (!error) {
-      // Reload user profile to get updated admin status
-      if (user) {
+    try {
+      const { data, error } = await db.promoteToAdmin(email);
+      if (!error && user) {
+        // Reload user profile to get updated admin status
         await loadUserProfile(user.id);
       }
+      return { data, error };
+    } catch (error) {
+      console.error('Error promoting to admin:', error);
+      return { error: error.message };
     }
-    return { data, error };
   };
 
   const value = {

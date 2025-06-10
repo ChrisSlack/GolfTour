@@ -60,7 +60,7 @@ export const db = {
       .from('users')
       .select('*')
       .eq('id', id)
-      .maybeSingle(); // Use maybeSingle instead of single to handle no results
+      .maybeSingle();
     return { data, error };
   },
 
@@ -110,7 +110,7 @@ export const db = {
       .from('tours')
       .select('*')
       .eq('is_active', true)
-      .maybeSingle(); // Use maybeSingle to handle no results gracefully
+      .maybeSingle();
     return { data, error };
   },
 
@@ -119,7 +119,7 @@ export const db = {
     await supabase
       .from('tours')
       .update({ is_active: false })
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all
+      .neq('id', '00000000-0000-0000-0000-000000000000');
 
     // Then create the new active tour
     const { data, error } = await supabase
