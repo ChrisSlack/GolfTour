@@ -66,7 +66,7 @@ export default function AuthProvider({ children }) {
         if (mounted) {
           console.log('🧹 Clearing potentially corrupted session...');
           try {
-            await withTimeout(auth.signOut(), 5000, 'signOut');
+            await withTimeout(auth.signOut(), 10000, 'signOut');
             console.log('✅ Session cleared successfully');
           } catch (signOutError) {
             console.error('❌ Error clearing session:', signOutError);
