@@ -92,7 +92,7 @@ export default function Scorecard() {
   };
 
   return (
-    <section className="page" id="scorecard">
+    <section className="page active" id="scorecard">
       <h2>Scorecard</h2>
       <div className="mt-8">
         <label className="form-label">Select Course</label>

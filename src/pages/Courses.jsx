@@ -7,7 +7,7 @@ export default function Courses() {
   if (selected) {
     const course = courses[selected];
     return (
-      <section className="page" id="courses">
+      <section className="page active" id="courses">
         <button className="btn mb-8" onClick={() => setSelected(null)}>Back</button>
         <h2>{course.name}</h2>
         <p className="mt-8">{course.description}</p>
@@ -25,7 +25,7 @@ export default function Courses() {
   }
 
   return (
-    <section className="page" id="courses">
+    <section className="page active" id="courses">
       <h2>Golf Courses</h2>
       <div className="courses-grid mt-8">
         {Object.entries(courses).map(([key, course]) => (
