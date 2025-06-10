@@ -192,6 +192,7 @@ export default function Scorecard() {
       return;
     }
     
+    // Clear previous selection and set new one
     setSelectedScore(score);
   };
 
@@ -575,10 +576,13 @@ export default function Scorecard() {
             else if (diff === 2) label = 'Double Bogey';
             else if (diff >= 3) label = `+${diff}`;
 
+            // Only highlight if this score is currently selected
+            const isSelected = selectedScore === scoreValue;
+
             return (
               <button 
                 key={scoreValue}
-                className={`mobile-score-btn ${isParScore ? 'mobile-score-btn--par' : ''} ${selectedScore === scoreValue ? 'mobile-score-btn--selected' : ''}`}
+                className={`mobile-score-btn ${isParScore && !isSelected ? 'mobile-score-btn--par' : ''} ${isSelected ? 'mobile-score-btn--selected' : ''}`}
                 onClick={() => handleMobileScoreSelect(scoreValue)}
               >
                 <span className="score-number">{scoreValue}</span>
