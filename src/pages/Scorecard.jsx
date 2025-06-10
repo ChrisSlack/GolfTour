@@ -24,6 +24,8 @@ export default function Scorecard() {
   const [mobileView, setMobileView] = useState('overview'); // 'overview', 'hole-entry'
   const [currentHole, setCurrentHole] = useState(1);
   const [currentPlayer, setCurrentPlayer] = useState(0);
+  const [showWarning, setShowWarning] = useState(false);
+  const [warningMessage, setWarningMessage] = useState('');
 
   useEffect(() => {
     // Check if mobile
@@ -300,7 +302,64 @@ export default function Scorecard() {
       }
     }
     
-    return validScores === 0 ? '' : total;
+    return validScores === 0 ? 0 : total;
+  };
+
+  const getPlayerTotalScore = (playerId) => {
+    return calculateTotal(playerId, 0, 18);
+  };
+
+  const checkForIncompleteHoles = () => {
+    const currentPlayerData = getCurrentPlayer();
+    if (!currentPlayerData) return false;
+    
+    const currentScore = scores[currentPlayerData.id]?.[currentHole - 1];
+    return !currentScore || currentScore === '';
+  };
+
+  const handleHoleNavigation = (holeNumber) => {
+    if (checkForIncompleteHoles()) {
+      setWarningMessage(`Please enter a score for Hole ${currentHole} before moving to another hole.`);
+      setShowWarning(true);
+      setTimeout(() => setShowWarning(false), 3000);
+      return;
+    }
+    
+    setCurrentHole(holeNumber);
+    setCurrentPlayer(0);
+  };
+
+  const handlePlayerNavigation = (direction) => {
+    if (direction === 'next') {
+      if (currentPlayer < selectedPlayers.length - 1) {
+        setCurrentPlayer(currentPlayer + 1);
+      } else if (currentHole < 18) {
+        setCurrentHole(currentHole + 1);
+        setCurrentPlayer(0);
+      } else {
+        setMobileView('overview');
+      }
+    } else {
+      if (currentPlayer > 0) {
+        setCurrentPlayer(currentPlayer - 1);
+      } else if (currentHole > 1) {
+        setCurrentHole(currentHole - 1);
+        setCurrentPlayer(selectedPlayers.length - 1);
+      }
+    }
+  };
+
+  const getHoleLength = (holeNumber) => {
+    // Mock hole lengths - in a real app, this would come from course data
+    const holeLengths = {
+      morgado: [385, 520, 535, 410, 166, 380, 395, 175, 485, 370, 415, 180, 390, 425, 510, 155, 365, 440],
+      amendoeira: [410, 395, 425, 613, 138, 380, 520, 165, 405, 385, 545, 415, 175, 390, 420, 580, 160, 450],
+      quintadolago: [395, 510, 415, 171, 385, 520, 180, 405, 370, 425, 195, 390, 545, 160, 380, 440, 185, 420]
+    };
+    
+    const courseKey = getCourseKey(selectedCourse?.name || '');
+    const lengths = holeLengths[courseKey] || Array(18).fill(400);
+    return lengths[holeNumber - 1] || 400;
   };
 
   if (loading) {
@@ -341,7 +400,7 @@ export default function Scorecard() {
               className="mobile-back-btn"
               onClick={() => setMobileView('overview')}
             >
-              <i className="fas fa-arrow-left"></i>
+              <i className="fas fa-undo"></i>
             </button>
             <div className="mobile-hole-info">
               <h2>HOLE {currentHole} | PAR {currentHoleData.par}</h2>
@@ -356,25 +415,83 @@ export default function Scorecard() {
 
     const currentScore = scores[currentPlayerData.id]?.[currentHole - 1];
     const currentScoreNum = currentScore ? parseInt(currentScore) : null;
+    const playerTotal = getPlayerTotalScore(currentPlayerData.id);
 
     return (
       <section className="page active mobile-scorecard">
+        {/* Warning Banner */}
+        {showWarning && (
+          <div className="mobile-warning">
+            <i className="fas fa-exclamation-triangle"></i>
+            <span>{warningMessage}</span>
+          </div>
+        )}
+
+        {/* Header with Return Arrow */}
         <div className="mobile-header">
           <button 
             className="mobile-back-btn"
             onClick={() => setMobileView('overview')}
           >
-            <i className="fas fa-arrow-left"></i>
+            <i className="fas fa-undo"></i>
           </button>
-          <div className="mobile-hole-info">
-            <h2>HOLE {currentHole} | PAR {currentHoleData.par}</h2>
-            <div className="mobile-hole-hcp">HCP {currentHoleData.hcp}</div>
+        </div>
+
+        {/* Hole Navigation Strip */}
+        <div className="mobile-hole-strip">
+          <div className="hole-strip-container">
+            {Array.from({ length: 18 }, (_, i) => {
+              const holeNum = i + 1;
+              const hasScore = scores[currentPlayerData.id]?.[i];
+              
+              return (
+                <button
+                  key={holeNum}
+                  className={`hole-strip-btn ${currentHole === holeNum ? 'hole-strip-btn--active' : ''} ${hasScore ? 'hole-strip-btn--completed' : ''}`}
+                  onClick={() => handleHoleNavigation(holeNum)}
+                >
+                  <span className="hole-number">{holeNum}</span>
+                  <span className="hole-par">Par {holeData[i]?.par || 4}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
+        {/* Hole Information */}
+        <div className="mobile-hole-details">
+          <h2>HOLE {currentHole} | PAR {currentHoleData.par}</h2>
+          <div className="hole-meta">
+            <span className="hole-length">{getHoleLength(currentHole)}m</span>
+            <span className="hole-hcp">HCP {currentHoleData.hcp}</span>
+          </div>
+        </div>
+
+        {/* Player Information with Scrolling */}
+        <div className="mobile-player-section">
+          <div className="player-scroll-container">
+            {selectedPlayers.map((playerId, index) => {
+              const player = users.find(u => u.id === playerId);
+              const isActive = index === currentPlayer;
+              const playerScore = getPlayerTotalScore(playerId);
+              
+              return (
+                <div 
+                  key={playerId}
+                  className={`player-scroll-item ${isActive ? 'player-scroll-item--active' : ''}`}
+                  onClick={() => setCurrentPlayer(index)}
+                >
+                  <div className="player-name">{player?.name} {player?.surname}</div>
+                  <div className="player-handicap">HCP {player?.handicap}</div>
+                  <div className="player-total">Total: {playerScore || 0}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Current Score Display */}
         <div className="mobile-player-info">
-          <div className="player-name">{currentPlayerData.name} {currentPlayerData.surname}</div>
-          <div className="player-handicap">HCP {currentPlayerData.handicap}</div>
           <div className="player-score-display">
             {currentScore ? (
               <div className="current-score">
@@ -389,6 +506,7 @@ export default function Scorecard() {
           </div>
         </div>
 
+        {/* Score Entry Grid */}
         <div className="mobile-score-grid">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(scoreValue => {
             const diff = scoreValue - currentHoleData.par;
@@ -419,6 +537,55 @@ export default function Scorecard() {
           })}
         </div>
 
+        {/* Additional Tracking Buttons */}
+        <div className="mobile-extras">
+          <h4>Track Additional Stats</h4>
+          <div className="extras-grid">
+            <button 
+              className={`extra-btn ${scoreExtras[currentPlayerData.id]?.[currentHole]?.threePutt ? 'extra-btn--active' : ''}`}
+              onClick={() => {
+                const current = scoreExtras[currentPlayerData.id]?.[currentHole]?.threePutt || false;
+                handleExtraChange(currentPlayerData.id, currentHole, 'threePutt', !current);
+              }}
+            >
+              <i className="fas fa-golf-ball"></i>
+              <span>3-Putt</span>
+            </button>
+            
+            <button 
+              className={`extra-btn ${scoreExtras[currentPlayerData.id]?.[currentHole]?.ring ? 'extra-btn--active' : ''}`}
+              onClick={() => {
+                const current = scoreExtras[currentPlayerData.id]?.[currentHole]?.ring || false;
+                handleExtraChange(currentPlayerData.id, currentHole, 'ring', !current);
+              }}
+            >
+              <i className="fas fa-bullseye"></i>
+              <span>Ring (Hit Pin)</span>
+            </button>
+            
+            <button className="extra-btn">
+              <i className="fas fa-flag"></i>
+              <span>GIR</span>
+            </button>
+            
+            <button className="extra-btn">
+              <i className="fas fa-mountain"></i>
+              <span>Bunker</span>
+            </button>
+            
+            <button className="extra-btn">
+              <i className="fas fa-tint"></i>
+              <span>Water</span>
+            </button>
+            
+            <button className="extra-btn">
+              <i className="fas fa-search"></i>
+              <span>Lost Ball</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Clear Score Action */}
         <div className="mobile-actions">
           <button 
             className="mobile-action-btn mobile-action-btn--clear"
@@ -428,17 +595,11 @@ export default function Scorecard() {
           </button>
         </div>
 
+        {/* Navigation */}
         <div className="mobile-navigation">
           <button 
             className="mobile-nav-btn"
-            onClick={() => {
-              if (currentPlayer > 0) {
-                setCurrentPlayer(currentPlayer - 1);
-              } else if (currentHole > 1) {
-                setCurrentHole(currentHole - 1);
-                setCurrentPlayer(selectedPlayers.length - 1);
-              }
-            }}
+            onClick={() => handlePlayerNavigation('prev')}
             disabled={currentHole === 1 && currentPlayer === 0}
           >
             <i className="fas fa-chevron-left"></i>
@@ -456,16 +617,7 @@ export default function Scorecard() {
           
           <button 
             className="mobile-nav-btn"
-            onClick={() => {
-              if (currentPlayer < selectedPlayers.length - 1) {
-                setCurrentPlayer(currentPlayer + 1);
-              } else if (currentHole < 18) {
-                setCurrentHole(currentHole + 1);
-                setCurrentPlayer(0);
-              } else {
-                setMobileView('overview');
-              }
-            }}
+            onClick={() => handlePlayerNavigation('next')}
             disabled={currentHole === 18 && currentPlayer === selectedPlayers.length - 1}
           >
             <span>{currentHole === 18 && currentPlayer === selectedPlayers.length - 1 ? 'Finish' : 'Next'}</span>

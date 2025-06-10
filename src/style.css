@@ -1454,7 +1454,7 @@ main {
     color: #fbbf24;
 }
 
-/* Mobile Scorecard Styles */
+/* Enhanced Mobile Scorecard Styles */
 .mobile-scorecard {
     min-height: 100vh;
     background-color: var(--color-background);
@@ -1462,6 +1462,30 @@ main {
     flex-direction: column;
 }
 
+/* Warning Banner */
+.mobile-warning {
+    background-color: var(--color-warning);
+    color: white;
+    padding: var(--space-12) var(--space-16);
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+/* Header with Return Arrow */
 .mobile-header {
     background-color: var(--color-text);
     color: var(--color-background);
@@ -1489,24 +1513,159 @@ main {
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.mobile-hole-info {
-    flex: 1;
-    text-align: center;
+/* Hole Navigation Strip */
+.mobile-hole-strip {
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-8) 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
-.mobile-hole-info h2 {
-    color: var(--color-background);
+.mobile-hole-strip::-webkit-scrollbar {
+    display: none;
+}
+
+.hole-strip-container {
+    display: flex;
+    gap: var(--space-8);
+    padding: 0 var(--space-16);
+    min-width: max-content;
+}
+
+.hole-strip-btn {
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    padding: var(--space-8) var(--space-12);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-standard);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 60px;
+    font-size: var(--font-size-xs);
+}
+
+.hole-strip-btn--active {
+    background-color: var(--color-primary);
+    color: var(--color-btn-primary-text);
+    border-color: var(--color-primary);
+}
+
+.hole-strip-btn--completed {
+    background-color: var(--color-success);
+    color: var(--color-btn-primary-text);
+    border-color: var(--color-success);
+}
+
+.hole-strip-btn:hover:not(.hole-strip-btn--active) {
+    background-color: var(--color-secondary);
+}
+
+.hole-number {
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-sm);
+}
+
+.hole-par {
+    font-size: var(--font-size-xs);
+    opacity: 0.8;
+}
+
+/* Hole Details */
+.mobile-hole-details {
+    background-color: var(--color-surface);
+    padding: var(--space-16);
+    text-align: center;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.mobile-hole-details h2 {
+    color: var(--color-text);
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-bold);
-    margin: 0;
+    margin: 0 0 var(--space-8) 0;
 }
 
-.mobile-hole-hcp {
+.hole-meta {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-16);
     font-size: var(--font-size-sm);
-    opacity: 0.8;
-    margin-top: var(--space-4);
+    color: var(--color-text-secondary);
 }
 
+.hole-length {
+    font-weight: var(--font-weight-medium);
+}
+
+.hole-hcp {
+    font-weight: var(--font-weight-medium);
+}
+
+/* Player Scrolling Section */
+.mobile-player-section {
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-8) 0;
+}
+
+.player-scroll-container {
+    display: flex;
+    gap: var(--space-12);
+    padding: 0 var(--space-16);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.player-scroll-container::-webkit-scrollbar {
+    display: none;
+}
+
+.player-scroll-item {
+    background-color: var(--color-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    padding: var(--space-12);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-standard);
+    min-width: 120px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.player-scroll-item--active {
+    background-color: var(--color-primary);
+    color: var(--color-btn-primary-text);
+    border-color: var(--color-primary);
+}
+
+.player-scroll-item:hover:not(.player-scroll-item--active) {
+    background-color: var(--color-secondary-hover);
+}
+
+.player-scroll-item .player-name {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--space-4);
+}
+
+.player-scroll-item .player-handicap {
+    font-size: var(--font-size-xs);
+    opacity: 0.8;
+    margin-bottom: var(--space-4);
+}
+
+.player-scroll-item .player-total {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+}
+
+/* Player Info with Current Score */
 .mobile-player-info {
     background-color: var(--color-primary);
     color: var(--color-btn-primary-text);
@@ -1514,20 +1673,8 @@ main {
     text-align: center;
 }
 
-.player-name {
-    font-size: var(--font-size-2xl);
-    font-weight: var(--font-weight-bold);
-    margin-bottom: var(--space-8);
-}
-
-.player-handicap {
-    font-size: var(--font-size-lg);
-    opacity: 0.9;
-    margin-bottom: var(--space-16);
-}
-
 .player-score-display {
-    min-height: 60px;
+    min-height: 80px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1562,6 +1709,7 @@ main {
     opacity: 0.7;
 }
 
+/* Score Entry Grid */
 .mobile-score-grid {
     flex: 1;
     padding: var(--space-24);
@@ -1627,6 +1775,57 @@ main {
     line-height: 1.2;
 }
 
+/* Additional Tracking Features */
+.mobile-extras {
+    background-color: var(--color-surface);
+    padding: var(--space-16);
+    border-top: 1px solid var(--color-border);
+}
+
+.mobile-extras h4 {
+    margin: 0 0 var(--space-12) 0;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+.extras-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-8);
+}
+
+.extra-btn {
+    background-color: var(--color-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-base);
+    padding: var(--space-8);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-standard);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    font-size: var(--font-size-xs);
+    color: var(--color-text);
+}
+
+.extra-btn--active {
+    background-color: var(--color-primary);
+    color: var(--color-btn-primary-text);
+    border-color: var(--color-primary);
+}
+
+.extra-btn:hover:not(.extra-btn--active) {
+    background-color: var(--color-secondary-hover);
+}
+
+.extra-btn i {
+    font-size: var(--font-size-sm);
+}
+
+/* Actions */
 .mobile-actions {
     padding: var(--space-16) var(--space-24);
 }
@@ -1651,6 +1850,7 @@ main {
     background-color: rgba(var(--color-error-rgb), 0.9);
 }
 
+/* Navigation */
 .mobile-navigation {
     background-color: var(--color-surface);
     border-top: 1px solid var(--color-border);
@@ -1704,6 +1904,7 @@ main {
     margin-top: var(--space-4);
 }
 
+/* Mobile Overview Actions */
 .mobile-start-btn {
     font-size: var(--font-size-xl);
     padding: var(--space-20) var(--space-24);
@@ -1754,5 +1955,17 @@ main {
     
     .mobile-score-btn .score-label {
         font-size: var(--font-size-xs);
+    }
+    
+    .extras-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .hole-strip-container {
+        padding: 0 var(--space-8);
+    }
+    
+    .player-scroll-container {
+        padding: 0 var(--space-8);
     }
 }
