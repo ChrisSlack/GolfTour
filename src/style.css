@@ -321,6 +321,7 @@ pre code {
   border: none;
   text-decoration: none;
   position: relative;
+  gap: var(--space-8);
 }
 
 .btn:focus-visible {
@@ -371,7 +372,7 @@ pre code {
 }
 
 .btn--lg {
-  padding: var(--space-10) var(--space-20);
+  padding: var(--space-12) var(--space-24);
   font-size: var(--font-size-lg);
   border-radius: var(--radius-md);
 }
@@ -1451,4 +1452,307 @@ main {
 
 [data-color-scheme="dark"] .text-yellow-800 {
     color: #fbbf24;
+}
+
+/* Mobile Scorecard Styles */
+.mobile-scorecard {
+    min-height: 100vh;
+    background-color: var(--color-background);
+    display: flex;
+    flex-direction: column;
+}
+
+.mobile-header {
+    background-color: var(--color-text);
+    color: var(--color-background);
+    padding: var(--space-16);
+    display: flex;
+    align-items: center;
+    gap: var(--space-16);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.mobile-back-btn {
+    background: none;
+    border: none;
+    color: var(--color-background);
+    font-size: var(--font-size-xl);
+    cursor: pointer;
+    padding: var(--space-8);
+    border-radius: var(--radius-base);
+    transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+.mobile-back-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.mobile-hole-info {
+    flex: 1;
+    text-align: center;
+}
+
+.mobile-hole-info h2 {
+    color: var(--color-background);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    margin: 0;
+}
+
+.mobile-hole-hcp {
+    font-size: var(--font-size-sm);
+    opacity: 0.8;
+    margin-top: var(--space-4);
+}
+
+.mobile-player-info {
+    background-color: var(--color-primary);
+    color: var(--color-btn-primary-text);
+    padding: var(--space-24);
+    text-align: center;
+}
+
+.player-name {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-8);
+}
+
+.player-handicap {
+    font-size: var(--font-size-lg);
+    opacity: 0.9;
+    margin-bottom: var(--space-16);
+}
+
+.player-score-display {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.current-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-8);
+}
+
+.current-score .score-number {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-full);
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.current-score .score-label {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+}
+
+.no-score {
+    font-size: var(--font-size-lg);
+    opacity: 0.7;
+}
+
+.mobile-score-grid {
+    flex: 1;
+    padding: var(--space-24);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-16);
+    align-content: start;
+}
+
+.mobile-score-btn {
+    background-color: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-20);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-standard);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-8);
+    min-height: 80px;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.mobile-score-btn:hover {
+    background-color: var(--color-secondary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.mobile-score-btn:active {
+    transform: translateY(0);
+}
+
+.mobile-score-btn--par {
+    background-color: var(--color-primary);
+    color: var(--color-btn-primary-text);
+    border-color: var(--color-primary);
+}
+
+.mobile-score-btn--par:hover {
+    background-color: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+}
+
+.mobile-score-btn--selected {
+    background-color: var(--color-success);
+    color: var(--color-btn-primary-text);
+    border-color: var(--color-success);
+    transform: scale(0.95);
+}
+
+.mobile-score-btn .score-number {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+}
+
+.mobile-score-btn .score-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-align: center;
+    line-height: 1.2;
+}
+
+.mobile-actions {
+    padding: var(--space-16) var(--space-24);
+}
+
+.mobile-action-btn {
+    width: 100%;
+    padding: var(--space-16);
+    border-radius: var(--radius-base);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-standard);
+    border: none;
+}
+
+.mobile-action-btn--clear {
+    background-color: var(--color-error);
+    color: white;
+}
+
+.mobile-action-btn--clear:hover {
+    background-color: rgba(var(--color-error-rgb), 0.9);
+}
+
+.mobile-navigation {
+    background-color: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    padding: var(--space-16) var(--space-24);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-16);
+}
+
+.mobile-nav-btn {
+    background-color: var(--color-primary);
+    color: var(--color-btn-primary-text);
+    border: none;
+    border-radius: var(--radius-base);
+    padding: var(--space-12) var(--space-16);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease-standard);
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    font-weight: var(--font-weight-medium);
+    min-width: 100px;
+    justify-content: center;
+}
+
+.mobile-nav-btn:hover:not(:disabled) {
+    background-color: var(--color-primary-hover);
+}
+
+.mobile-nav-btn:disabled {
+    background-color: var(--color-secondary);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+}
+
+.mobile-nav-info {
+    text-align: center;
+    flex: 1;
+}
+
+.player-indicator {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+}
+
+.hole-indicator {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-top: var(--space-4);
+}
+
+.mobile-start-btn {
+    font-size: var(--font-size-xl);
+    padding: var(--space-20) var(--space-24);
+    margin-bottom: var(--space-16);
+}
+
+.mobile-actions-row {
+    display: flex;
+    gap: var(--space-12);
+    margin-top: var(--space-16);
+}
+
+.mobile-actions-row .btn {
+    flex: 1;
+}
+
+/* Mobile Error State */
+.mobile-error {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-24);
+}
+
+.mobile-error p {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-secondary);
+    text-align: center;
+}
+
+/* Responsive adjustments for mobile scorecard */
+@media (max-width: 480px) {
+    .mobile-score-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-12);
+        padding: var(--space-16);
+    }
+    
+    .mobile-score-btn {
+        padding: var(--space-16);
+        min-height: 70px;
+    }
+    
+    .mobile-score-btn .score-number {
+        font-size: var(--font-size-xl);
+    }
+    
+    .mobile-score-btn .score-label {
+        font-size: var(--font-size-xs);
+    }
 }

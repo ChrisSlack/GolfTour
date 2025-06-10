@@ -18,6 +18,24 @@ export default function Scorecard() {
   const [deleting, setDeleting] = useState(false);
   const [showNet, setShowNet] = useState(false);
   const [scoringMode, setScoringMode] = useState('stroke'); // 'stroke' or 'stableford'
+  
+  // Mobile-specific state
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileView, setMobileView] = useState('overview'); // 'overview', 'hole-entry'
+  const [currentHole, setCurrentHole] = useState(1);
+  const [currentPlayer, setCurrentPlayer] = useState(0);
+
+  useEffect(() => {
+    // Check if mobile
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -33,23 +51,18 @@ export default function Scorecard() {
   const calculateCourseHandicap = (handicapIndex, courseKey) => {
     const courseData = courseRatings[courseKey];
     if (!courseData) {
-      // Fallback to simplified calculation if course data not found
       return Math.round(handicapIndex);
     }
-
-    // USGA Formula: Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating - Par)
     const courseHandicap = handicapIndex * (courseData.slopeRating / 113) + (courseData.courseRating - courseData.par);
     return Math.round(courseHandicap);
   };
 
-  // Calculate net score using USGA method (simple subtraction)
+  // Calculate net score using USGA method
   const calculateNetScore = (grossScore, courseHandicap) => {
-    // Under USGA rules: Net Score = Gross Score - Course Handicap
-    // Minimum net score is 1 (can't go below 1)
     return Math.max(1, grossScore - courseHandicap);
   };
 
-  // Calculate Stableford points based on net score vs par
+  // Calculate Stableford points
   const calculateStablefordPoints = (netScore, par) => {
     const diff = netScore - par;
     if (diff <= -3) return 5; // Albatross/Double Eagle
@@ -58,41 +71,6 @@ export default function Scorecard() {
     if (diff === 0) return 2;  // Par
     if (diff === 1) return 1;  // Bogey
     return 0; // Double bogey or worse
-  };
-
-  // Allocate handicap strokes to holes based on stroke index
-  const allocateHandicapStrokes = (courseHandicap, holeData) => {
-    const strokesPerHole = Array(18).fill(0);
-    
-    if (courseHandicap <= 0) return strokesPerHole;
-    
-    // Create array of holes with their stroke indices, sorted by stroke index
-    const holesWithIndex = holeData.map((hole, index) => ({
-      holeNumber: index,
-      strokeIndex: hole.hcp || (index + 1)
-    })).sort((a, b) => a.strokeIndex - b.strokeIndex);
-    
-    // Allocate strokes based on course handicap
-    let remainingStrokes = Math.abs(courseHandicap);
-    
-    // First pass: give one stroke to holes in stroke index order
-    for (let i = 0; i < Math.min(18, remainingStrokes); i++) {
-      strokesPerHole[holesWithIndex[i].holeNumber] = 1;
-    }
-    remainingStrokes -= Math.min(18, remainingStrokes);
-    
-    // Second pass: give second stroke if handicap > 18
-    for (let i = 0; i < Math.min(18, remainingStrokes); i++) {
-      strokesPerHole[holesWithIndex[i].holeNumber] = 2;
-    }
-    remainingStrokes -= Math.min(18, remainingStrokes);
-    
-    // Third pass: give third stroke if handicap > 36 (rare but possible)
-    for (let i = 0; i < Math.min(18, remainingStrokes); i++) {
-      strokesPerHole[holesWithIndex[i].holeNumber] = 3;
-    }
-    
-    return strokesPerHole;
   };
 
   // Get course key from course name
@@ -106,12 +84,10 @@ export default function Scorecard() {
 
   const loadData = async () => {
     try {
-      // Get active tour
       const { data: tour } = await db.getActiveTour();
       setActiveTour(tour);
 
       if (tour) {
-        // Get courses for active tour
         const { data: coursesData } = await db.getCourses(tour.id);
         setCourses(coursesData || []);
         
@@ -120,7 +96,6 @@ export default function Scorecard() {
         }
       }
 
-      // Get all users
       const { data: usersData } = await db.getUsers();
       setUsers(usersData || []);
     } catch (error) {
@@ -140,7 +115,6 @@ export default function Scorecard() {
     try {
       const { data: scoresData } = await db.getScores(selectedCourse.id);
       
-      // Organize scores by user and hole
       const organizedScores = {};
       const organizedExtras = {};
       
@@ -153,7 +127,6 @@ export default function Scorecard() {
         if (organizedScores[score.user_id]) {
           organizedScores[score.user_id][score.hole_number - 1] = score.strokes.toString();
           
-          // Load extras (3-putts and rings)
           if (!organizedExtras[score.user_id]) {
             organizedExtras[score.user_id] = {};
           }
@@ -182,17 +155,13 @@ export default function Scorecard() {
   };
 
   const handleScoreChange = (playerId, holeIndex, value) => {
-    // Validate score: must be between 1 and 12
     const numValue = parseInt(value, 10);
     if (value !== '' && (isNaN(numValue) || numValue < 1 || numValue > 12)) {
-      return; // Don't update if invalid
+      return;
     }
 
     setScores(prev => {
-      // Get the current scores array for this player, or create a new one
       const currentPlayerScores = prev[playerId] || Array(18).fill('');
-      
-      // Create a new array with the updated score
       const newPlayerScores = [...currentPlayerScores];
       newPlayerScores[holeIndex] = value;
       
@@ -201,6 +170,26 @@ export default function Scorecard() {
         [playerId]: newPlayerScores
       };
     });
+  };
+
+  const handleMobileScoreEntry = (score) => {
+    if (selectedPlayers.length === 0) return;
+    
+    const playerId = selectedPlayers[currentPlayer];
+    const holeIndex = currentHole - 1;
+    
+    handleScoreChange(playerId, holeIndex, score.toString());
+    
+    // Auto-advance to next player or hole
+    if (currentPlayer < selectedPlayers.length - 1) {
+      setCurrentPlayer(currentPlayer + 1);
+    } else if (currentHole < 18) {
+      setCurrentPlayer(0);
+      setCurrentHole(currentHole + 1);
+    } else {
+      // Finished round
+      setMobileView('overview');
+    }
   };
 
   const handleExtraChange = (playerId, holeNumber, extraType, value) => {
@@ -221,7 +210,6 @@ export default function Scorecard() {
 
     setSaving(true);
     try {
-      // Save scores for each selected player
       for (const playerId of selectedPlayers) {
         const playerScores = scores[playerId] || Array(18).fill('');
         const playerExtras = scoreExtras[playerId] || {};
@@ -229,7 +217,7 @@ export default function Scorecard() {
       }
       
       alert('Scorecard saved successfully!');
-      await loadScores(); // Reload to show saved data
+      await loadScores();
     } catch (error) {
       console.error('Error saving scorecard:', error);
       alert('Error saving scorecard: ' + error.message);
@@ -254,7 +242,7 @@ export default function Scorecard() {
       }
       
       alert('Scorecard(s) deleted successfully!');
-      await loadScores(); // Reload to show updated data
+      await loadScores();
     } catch (error) {
       console.error('Error deleting scorecard:', error);
       alert('Error deleting scorecard: ' + error.message);
@@ -263,56 +251,9 @@ export default function Scorecard() {
     }
   };
 
-  const calculateTotal = (playerId, startHole, endHole, useNet = false, useStableford = false) => {
-    const playerScores = scores[playerId] || [];
-    const player = users.find(u => u.id === playerId);
-    
-    if (!player) return '';
-    
-    const courseKey = getCourseKey(selectedCourse?.name || '');
-    const courseHandicap = calculateCourseHandicap(player.handicap, courseKey);
-    const holeData = getHoleData();
-    const handicapStrokes = allocateHandicapStrokes(courseHandicap, holeData);
-    
-    let total = 0;
-    let validScores = 0;
-    
-    for (let i = startHole; i < endHole; i++) {
-      const grossScore = parseInt(playerScores[i], 10);
-      if (!isNaN(grossScore)) {
-        if (useStableford) {
-          // Calculate Stableford points for this hole
-          const par = holeData[i]?.par || 4;
-          const strokesReceived = handicapStrokes[i] || 0;
-          const netScore = Math.max(1, grossScore - strokesReceived);
-          const points = calculateStablefordPoints(netScore, par);
-          total += points;
-        } else if (useNet) {
-          // For net scoring, we need to calculate the total gross first, then apply handicap
-          total += grossScore;
-        } else {
-          total += grossScore;
-        }
-        validScores++;
-      }
-    }
-    
-    if (validScores === 0) return '';
-    
-    if (useNet && !useStableford) {
-      // Calculate net total using USGA method
-      const proportionalHandicap = Math.round(courseHandicap * (validScores / 18));
-      const netTotal = calculateNetScore(total, proportionalHandicap);
-      return netTotal;
-    }
-    
-    return total;
-  };
-
   const getHoleData = () => {
     if (!selectedCourse) return [];
     
-    // Try to match course with scorecard data
     const courseKey = Object.keys(scorecards).find(key => 
       scorecards[key].name.toLowerCase().includes(selectedCourse.name.toLowerCase()) ||
       selectedCourse.name.toLowerCase().includes(key.toLowerCase())
@@ -322,8 +263,44 @@ export default function Scorecard() {
       return scorecards[courseKey].holes;
     }
     
-    // Fallback to course holes from database or default
     return selectedCourse.holes || Array(18).fill({ par: 4, hcp: 1 });
+  };
+
+  const getCurrentPlayer = () => {
+    if (selectedPlayers.length === 0) return null;
+    return users.find(u => u.id === selectedPlayers[currentPlayer]);
+  };
+
+  const getCurrentHoleData = () => {
+    const holeData = getHoleData();
+    return holeData[currentHole - 1] || { par: 4, hcp: 1 };
+  };
+
+  const getScoreLabel = (score, par) => {
+    const diff = score - par;
+    if (diff <= -3) return 'Albatross';
+    if (diff === -2) return 'Eagle';
+    if (diff === -1) return 'Birdie';
+    if (diff === 0) return 'Par';
+    if (diff === 1) return 'Bogey';
+    if (diff === 2) return 'Double Bogey';
+    return `+${diff}`;
+  };
+
+  const calculateTotal = (playerId, startHole, endHole) => {
+    const playerScores = scores[playerId] || [];
+    let total = 0;
+    let validScores = 0;
+    
+    for (let i = startHole; i < endHole; i++) {
+      const score = parseInt(playerScores[i], 10);
+      if (!isNaN(score)) {
+        total += score;
+        validScores++;
+      }
+    }
+    
+    return validScores === 0 ? '' : total;
   };
 
   if (loading) {
@@ -351,6 +328,155 @@ export default function Scorecard() {
   const courseKey = getCourseKey(selectedCourse?.name || '');
   const courseData = courseRatings[courseKey];
 
+  // Mobile Hole Entry View
+  if (isMobile && mobileView === 'hole-entry' && selectedCourse && selectedPlayers.length > 0) {
+    const currentPlayerData = getCurrentPlayer();
+    const currentHoleData = getCurrentHoleData();
+    
+    if (!currentPlayerData) {
+      return (
+        <section className="page active mobile-scorecard">
+          <div className="mobile-header">
+            <button 
+              className="mobile-back-btn"
+              onClick={() => setMobileView('overview')}
+            >
+              <i className="fas fa-arrow-left"></i>
+            </button>
+            <div className="mobile-hole-info">
+              <h2>HOLE {currentHole} | PAR {currentHoleData.par}</h2>
+            </div>
+          </div>
+          <div className="mobile-error">
+            <p>No player selected</p>
+          </div>
+        </section>
+      );
+    }
+
+    const currentScore = scores[currentPlayerData.id]?.[currentHole - 1];
+    const currentScoreNum = currentScore ? parseInt(currentScore) : null;
+
+    return (
+      <section className="page active mobile-scorecard">
+        <div className="mobile-header">
+          <button 
+            className="mobile-back-btn"
+            onClick={() => setMobileView('overview')}
+          >
+            <i className="fas fa-arrow-left"></i>
+          </button>
+          <div className="mobile-hole-info">
+            <h2>HOLE {currentHole} | PAR {currentHoleData.par}</h2>
+            <div className="mobile-hole-hcp">HCP {currentHoleData.hcp}</div>
+          </div>
+        </div>
+
+        <div className="mobile-player-info">
+          <div className="player-name">{currentPlayerData.name} {currentPlayerData.surname}</div>
+          <div className="player-handicap">HCP {currentPlayerData.handicap}</div>
+          <div className="player-score-display">
+            {currentScore ? (
+              <div className="current-score">
+                <span className="score-number">{currentScore}</span>
+                <span className="score-label">
+                  {getScoreLabel(parseInt(currentScore), currentHoleData.par)}
+                </span>
+              </div>
+            ) : (
+              <span className="no-score">Tap to enter score</span>
+            )}
+          </div>
+        </div>
+
+        <div className="mobile-score-grid">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(scoreValue => {
+            const diff = scoreValue - currentHoleData.par;
+            let label = '';
+            let isParScore = false;
+            
+            if (diff <= -3) label = 'Albatross';
+            else if (diff === -2) label = 'Eagle';
+            else if (diff === -1) label = 'Birdie';
+            else if (diff === 0) {
+              label = 'Par';
+              isParScore = true;
+            }
+            else if (diff === 1) label = 'Bogey';
+            else if (diff === 2) label = 'Double Bogey';
+            else if (diff >= 3) label = `+${diff}`;
+
+            return (
+              <button 
+                key={scoreValue}
+                className={`mobile-score-btn ${isParScore ? 'mobile-score-btn--par' : ''} ${currentScoreNum === scoreValue ? 'mobile-score-btn--selected' : ''}`}
+                onClick={() => handleMobileScoreEntry(scoreValue)}
+              >
+                <span className="score-number">{scoreValue}</span>
+                {label && <span className="score-label">{label}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mobile-actions">
+          <button 
+            className="mobile-action-btn mobile-action-btn--clear"
+            onClick={() => handleMobileScoreEntry('')}
+          >
+            Clear Score
+          </button>
+        </div>
+
+        <div className="mobile-navigation">
+          <button 
+            className="mobile-nav-btn"
+            onClick={() => {
+              if (currentPlayer > 0) {
+                setCurrentPlayer(currentPlayer - 1);
+              } else if (currentHole > 1) {
+                setCurrentHole(currentHole - 1);
+                setCurrentPlayer(selectedPlayers.length - 1);
+              }
+            }}
+            disabled={currentHole === 1 && currentPlayer === 0}
+          >
+            <i className="fas fa-chevron-left"></i>
+            <span>Previous</span>
+          </button>
+          
+          <div className="mobile-nav-info">
+            <div className="player-indicator">
+              Player {currentPlayer + 1} of {selectedPlayers.length}
+            </div>
+            <div className="hole-indicator">
+              Hole {currentHole} of 18
+            </div>
+          </div>
+          
+          <button 
+            className="mobile-nav-btn"
+            onClick={() => {
+              if (currentPlayer < selectedPlayers.length - 1) {
+                setCurrentPlayer(currentPlayer + 1);
+              } else if (currentHole < 18) {
+                setCurrentHole(currentHole + 1);
+                setCurrentPlayer(0);
+              } else {
+                setMobileView('overview');
+              }
+            }}
+            disabled={currentHole === 18 && currentPlayer === selectedPlayers.length - 1}
+          >
+            <span>{currentHole === 18 && currentPlayer === selectedPlayers.length - 1 ? 'Finish' : 'Next'}</span>
+            <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  // Mobile Overview or Desktop View
   return (
     <section className="page active" id="scorecard">
       <h2>Scorecard - {activeTour.name} {activeTour.year}</h2>
@@ -377,8 +503,8 @@ export default function Scorecard() {
             </select>
           </div>
           {courseData && (
-            <div className="mt-4 p-3 bg-gray-50 rounded">
-              <p className="text-sm">
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
                 <strong>Course Info:</strong> Par {courseData.par} | 
                 Course Rating: {courseData.courseRating} | 
                 Slope Rating: {courseData.slopeRating}
@@ -409,8 +535,45 @@ export default function Scorecard() {
         </div>
       </div>
 
-      {/* Scorecard */}
-      {selectedCourse && selectedPlayers.length > 0 && (
+      {/* Mobile Entry Button */}
+      {isMobile && selectedCourse && selectedPlayers.length > 0 && (
+        <div className="card mt-8">
+          <div className="card__body text-center">
+            <button
+              className="btn btn--primary btn--lg btn--full-width mobile-start-btn"
+              onClick={() => {
+                setCurrentHole(1);
+                setCurrentPlayer(0);
+                setMobileView('hole-entry');
+              }}
+            >
+              <i className="fas fa-golf-ball"></i>
+              <span>Start Scoring</span>
+            </button>
+            
+            {/* Mobile Save/Delete Actions */}
+            <div className="mobile-actions-row">
+              <button
+                className="btn btn--secondary"
+                onClick={handleDeleteScorecard}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete Scores'}
+              </button>
+              <button
+                className="btn btn--primary"
+                onClick={handleSaveScorecard}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save Scores'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Scorecard Table */}
+      {!isMobile && selectedCourse && selectedPlayers.length > 0 && (
         <div className="card mt-8">
           <div className="card__body">
             <div className="flex justify-between items-center mb-4">
@@ -476,33 +639,6 @@ export default function Scorecard() {
               </div>
             </div>
 
-            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
-              {scoringMode === 'stableford' ? (
-                <p className="text-sm text-yellow-800">
-                  <strong>Stableford Scoring:</strong><br/>
-                  • <strong>Points:</strong> Albatross=5, Eagle=4, Birdie=3, Par=2, Bogey=1, Double+=0<br/>
-                  • <strong>Net Score per Hole:</strong> Gross Strokes - Handicap Strokes on that hole<br/>
-                  • <strong>Handicap Strokes:</strong> Allocated by hole difficulty (Stroke Index)<br/>
-                  • <strong>Course Handicap Formula:</strong> Handicap Index × (Slope ÷ 113) + (Course Rating - Par)<br/>
-                  {courseData && (
-                    <>
-                      <strong>This Course:</strong> Example for 18 HCP = {Math.round(18 * (courseData.slopeRating / 113) + (courseData.courseRating - courseData.par))} strokes
-                    </>
-                  )}
-                </p>
-              ) : (
-                <p className="text-sm text-yellow-800">
-                  <strong>USGA Net Scoring:</strong> Net Score = Gross Score - Course Handicap (minimum 1)<br/>
-                  <strong>Course Handicap</strong> = Handicap Index × (Slope Rating ÷ 113) + (Course Rating - Par)<br/>
-                  {courseData && (
-                    <>
-                      <strong>This Course:</strong> Slope Rating {courseData.slopeRating}, Course Rating {courseData.courseRating}
-                    </>
-                  )}
-                </p>
-              )}
-            </div>
-
             <div className="scorecard-table-container">
               <table className="scorecard-table">
                 <thead>
@@ -537,20 +673,13 @@ export default function Scorecard() {
                 <tbody>
                   {selectedPlayers.map(playerId => {
                     const player = users.find(u => u.id === playerId);
-                    const courseHandicap = player ? calculateCourseHandicap(player.handicap, courseKey) : 0;
-                    const handicapStrokes = allocateHandicapStrokes(courseHandicap, holeData);
                     
-                    // Calculate totals based on scoring mode
-                    const outTotal = calculateTotal(playerId, 0, 9, showNet && scoringMode === 'stroke', scoringMode === 'stableford');
-                    const inTotal = calculateTotal(playerId, 9, 18, showNet && scoringMode === 'stroke', scoringMode === 'stableford');
-                    const grandTotal = outTotal && inTotal ? outTotal + inTotal : '';
-
                     return (
                       <tr key={playerId}>
                         <td className="font-medium">
                           {player?.name} {player?.surname}
                           <div className="text-xs text-gray-600">
-                            HCP: {player?.handicap} | Course HCP: {courseHandicap}
+                            HCP: {player?.handicap}
                           </div>
                         </td>
                         {Array.from({ length: 18 }, (_, holeIndex) => {
@@ -559,35 +688,19 @@ export default function Scorecard() {
                           const grossScore = parseInt(grossValue, 10);
                           const holeNumber = holeIndex + 1;
                           const extras = scoreExtras[playerId]?.[holeNumber] || {};
-                          const strokesReceived = handicapStrokes[holeIndex] || 0;
                           
                           let className = 'score-par';
-                          let displayValue = grossValue;
                           
                           if (!isNaN(grossScore)) {
                             const holeInfo = holeData[holeIndex];
                             const par = holeInfo?.par || 4;
+                            const diff = grossScore - par;
                             
-                            if (scoringMode === 'stableford') {
-                              // For Stableford, show points and color based on points
-                              const netScore = Math.max(1, grossScore - strokesReceived);
-                              const points = calculateStablefordPoints(netScore, par);
-                              displayValue = grossScore + ' (' + points + 'pts)';
-                              
-                              if (points >= 4) className = 'score-eagle';
-                              else if (points === 3) className = 'score-birdie';
-                              else if (points === 2) className = 'score-par';
-                              else if (points === 1) className = 'score-bogey';
-                              else className = 'score-double';
-                            } else {
-                              // Color based on gross score vs par (net coloring would be too complex per hole)
-                              const diff = grossScore - par;
-                              if (diff <= -2) className = 'score-eagle';
-                              else if (diff === -1) className = 'score-birdie';
-                              else if (diff === 0) className = 'score-par';
-                              else if (diff === 1) className = 'score-bogey';
-                              else if (diff >= 2) className = 'score-double';
-                            }
+                            if (diff <= -2) className = 'score-eagle';
+                            else if (diff === -1) className = 'score-birdie';
+                            else if (diff === 0) className = 'score-par';
+                            else if (diff === 1) className = 'score-bogey';
+                            else if (diff >= 2) className = 'score-double';
                           }
 
                           return (
@@ -603,11 +716,6 @@ export default function Scorecard() {
                                   max="12"
                                   placeholder="1-12"
                                 />
-                                {scoringMode === 'stableford' && strokesReceived > 0 && (
-                                  <div className="text-xs text-gray-600">
-                                    +{strokesReceived}
-                                  </div>
-                                )}
                                 <div className="flex gap-1">
                                   <label className="flex items-center text-xs cursor-pointer" title="3-Putt">
                                     <input
@@ -641,24 +749,9 @@ export default function Scorecard() {
                             </td>
                           );
                         })}
-                        <td className="font-bold">{outTotal}</td>
-                        <td className="font-bold">{inTotal}</td>
-                        <td className="font-bold">
-                          {scoringMode === 'stableford' ? (
-                            <div>
-                              <div>{grandTotal} pts</div>
-                            </div>
-                          ) : showNet ? (
-                            <div>
-                              <div>Net: {grandTotal}</div>
-                              <div className="text-xs text-gray-600">
-                                Gross: {calculateTotal(playerId, 0, 18, false, false)}
-                              </div>
-                            </div>
-                          ) : (
-                            grandTotal
-                          )}
-                        </td>
+                        <td className="font-bold">{calculateTotal(playerId, 0, 9)}</td>
+                        <td className="font-bold">{calculateTotal(playerId, 9, 18)}</td>
+                        <td className="font-bold">{calculateTotal(playerId, 0, 18)}</td>
                       </tr>
                     );
                   })}
