@@ -560,7 +560,7 @@ export default function Scorecard() {
                               // For Stableford, show points and color based on points
                               const netScore = Math.max(1, grossScore - strokesReceived);
                               const points = calculateStablefordPoints(netScore, par);
-                              displayValue = `${grossScore} (${points}pts)`;
+                              displayValue = \`${grossScore} (${points}pts)`;
                               
                               if (points >= 4) className = 'score-eagle';
                               else if (points === 3) className = 'score-birdie';
