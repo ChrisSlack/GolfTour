@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portugal Golf Trip 2025</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <div class="logo">
+                    <h1><i class="fas fa-golf-ball"></i> Portugal Golf Trip 2025</h1>
+                </div>
+                <nav class="main-nav">
+                    <ul class="flex gap-8">
+                        <li><a href="#" data-page="home" class="nav-link active">Home</a></li>
+                        <li><a href="#" data-page="schedule" class="nav-link">Schedule</a></li>
+                        <li><a href="#" data-page="courses" class="nav-link">Golf Courses</a></li>
+                        <li><a href="#" data-page="fines" class="nav-link">Banter & Fines</a></li>
+                        <li><a href="#" data-page="friday" class="nav-link">Friday Activities</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-16">
+        <!-- Home Page -->
+        <section id="home" class="page active">
+            <div class="hero card">
+                <div class="card__body">
+                    <h2>Welcome to our Portugal Golf Trip 2025!</h2>
+                    <p>Get ready for an unforgettable golfing adventure in the beautiful Algarve region of Portugal from July 1-6, 2025. This website serves as your complete guide to our upcoming trip.</p>
+                    <p>Explore our daily schedule, learn about the amazing golf courses we'll be playing, keep track of our banter and fines, and vote on what to do during our free day on Friday!</p>
+                </div>
+            </div>
+
+            <div class="mt-8">
+                <h3>Trip Schedule Overview</h3>
+                <div class="card mt-8">
+                    <div class="card__body schedule-table-container">
+                        <table class="schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Course/Activity</th>
+                                    <th>Tee Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Tuesday, July 1</td>
+                                    <td>Travel from Faro Airport to Vila Gale Cerro Alagoa</td>
+                                    <td>N/A</td>
+                                </tr>
+                                <tr>
+                                    <td>Wednesday, July 2</td>
+                                    <td>NAU Morgado Course</td>
+                                    <td>10:12</td>
+                                </tr>
+                                <tr>
+                                    <td>Thursday, July 3</td>
+                                    <td>Amendoeira Golf Resort</td>
+                                    <td>10:10</td>
+                                </tr>
+                                <tr>
+                                    <td>Friday, July 4</td>
+                                    <td>Free Day - Activities TBD</td>
+                                    <td>N/A</td>
+                                </tr>
+                                <tr>
+                                    <td>Saturday, July 5</td>
+                                    <td>Quinta do Lago South Course</td>
+                                    <td>10:24</td>
+                                </tr>
+                                <tr>
+                                    <td>Sunday, July 6</td>
+                                    <td>Travel from Vila Gale Cerro Alagoa to Faro Airport</td>
+                                    <td>N/A</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 card countdown-card">
+                <div class="card__body">
+                    <h3>Countdown to Tee Off</h3>
+                    <div class="countdown" id="countdown">
+                        <div class="countdown-item">
+                            <span class="countdown-number" id="countdown-days">--</span>
+                            <span class="countdown-label">Days</span>
+                        </div>
+                        <div class="countdown-item">
+                            <span class="countdown-number" id="countdown-hours">--</span>
+                            <span class="countdown-label">Hours</span>
+                        </div>
+                        <div class="countdown-item">
+                            <span class="countdown-number" id="countdown-minutes">--</span>
+                            <span class="countdown-label">Minutes</span>
+                        </div>
+                        <div class="countdown-item">
+                            <span class="countdown-number" id="countdown-seconds">--</span>
+                            <span class="countdown-label">Seconds</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Schedule Page -->
+        <section id="schedule" class="page">
+            <h2>Detailed Trip Schedule</h2>
+            <p>Here's our comprehensive daily schedule for the entire golf trip. All times are local Portugal time.</p>
+            
+            <div class="card mt-8">
+                <div class="card__body schedule-table-container">
+                    <table class="schedule-table schedule-table-full">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Course/Activity</th>
+                                <th>Departure</th>
+                                <th>Travel Time (min)</th>
+                                <th>Pre-Tee Off</th>
+                                <th>Tee Time</th>
+                                <th>Golf & Drinks</th>
+                                <th>Pick-Up</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schedule-table-body">
+                            <!-- Schedule will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Golf Courses Page -->
+        <section id="courses" class="page">
+            <h2>Golf Courses</h2>
+            <p>Explore the beautiful courses we'll be playing during our trip.</p>
+            
+            <div class="courses-grid">
+                <!-- Course cards will be dynamically generated -->
+            </div>
+            
+            <!-- Course Details Sections -->
+            <div id="course-morgado" class="course-details">
+                <div class="flex justify-between items-center">
+                    <h3>NAU Morgado Course</h3>
+                    <button class="btn btn--secondary btn--sm back-to-courses">
+                        <i class="fas fa-arrow-left"></i> Back to Courses
+                    </button>
+                </div>
+                
+                <div class="card mt-8">
+                    <div class="card__body">
+                        <p class="course-description"></p>
+                        
+                        <h4 class="mt-8">Playing Tips</h4>
+                        <ul class="tips-list">
+                            <!-- Tips will be populated by JavaScript -->
+                        </ul>
+                        
+                        <div class="mt-8">
+                            <a href="#" class="btn btn--primary course-website" target="_blank">
+                                Visit Official Website
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="course-amendoeira" class="course-details">
+                <div class="flex justify-between items-center">
+                    <h3>Amendoeira Golf Resort</h3>
+                    <button class="btn btn--secondary btn--sm back-to-courses">
+                        <i class="fas fa-arrow-left"></i> Back to Courses
+                    </button>
+                </div>
+                
+                <div class="card mt-8">
+                    <div class="card__body">
+                        <p class="course-description"></p>
+                        
+                        <h4 class="mt-8">Playing Tips</h4>
+                        <ul class="tips-list">
+                            <!-- Tips will be populated by JavaScript -->
+                        </ul>
+                        
+                        <div class="mt-8">
+                            <a href="#" class="btn btn--primary course-website" target="_blank">
+                                Visit Official Website
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="course-quintadolago" class="course-details">
+                <div class="flex justify-between items-center">
+                    <h3>Quinta do Lago South Course</h3>
+                    <button class="btn btn--secondary btn--sm back-to-courses">
+                        <i class="fas fa-arrow-left"></i> Back to Courses
+                    </button>
+                </div>
+                
+                <div class="card mt-8">
+                    <div class="card__body">
+                        <p class="course-description"></p>
+                        
+                        <h4 class="mt-8">Playing Tips</h4>
+                        <ul class="tips-list">
+                            <!-- Tips will be populated by JavaScript -->
+                        </ul>
+                        
+                        <div class="mt-8">
+                            <a href="#" class="btn btn--primary course-website" target="_blank">
+                                Visit Official Website
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Banter & Fines Page -->
+        <section id="fines" class="page">
+            <h2>Banter & Fines</h2>
+            <p>Keep track of all the fines during our trip. Who will be the biggest contributor to the pot?</p>
+            
+            <div class="flex gap-16 fines-container">
+                <div class="fines-form-container">
+                    <div class="card">
+                        <div class="card__header">
+                            <h3>Add New Fine</h3>
+                        </div>
+                        <div class="card__body">
+                            <form id="fine-form" class="fine-form">
+                                <div class="form-group">
+                                    <label for="fine-name" class="form-label">Name</label>
+                                    <input type="text" id="fine-name" class="form-control" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="fine-type" class="form-label">Fine Type</label>
+                                    <select id="fine-type" class="form-control" required>
+                                        <!-- Fine types will be populated by JavaScript -->
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="fine-description" class="form-label">Description (Optional)</label>
+                                    <textarea id="fine-description" class="form-control" rows="2"></textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn--primary btn--full-width">Add Fine</button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-8">
+                        <div class="card__header">
+                            <h3>Add New Fine Category</h3>
+                        </div>
+                        <div class="card__body">
+                            <form id="category-form" class="category-form">
+                                <div class="form-group">
+                                    <label for="category-name" class="form-label">Category Name</label>
+                                    <input type="text" id="category-name" class="form-control" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="category-amount" class="form-label">Amount (€)</label>
+                                    <input type="number" id="category-amount" class="form-control" min="1" value="1" required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="category-description" class="form-label">Description</label>
+                                    <textarea id="category-description" class="form-control" rows="2" required></textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn--primary btn--full-width">Add Category</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="fines-data-container">
+                    <ul class="tabs">
+                        <li><a href="#" class="tab active" data-tab="fines-list">Fines List</a></li>
+                        <li><a href="#" class="tab" data-tab="fines-summary">Summary</a></li>
+                    </ul>
+                    
+                    <div class="tab-content active" id="fines-list">
+                        <div class="card">
+                            <div class="card__header">
+                                <h3>All Fines</h3>
+                            </div>
+                            <div class="card__body">
+                                <table class="fines-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Fine Type</th>
+                                            <th>Amount</th>
+                                            <th>Description</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="fines-table-body">
+                                        <!-- Fines will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                                <p id="no-fines-message" class="mt-8 text-center">No fines recorded yet!</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tab-content" id="fines-summary">
+                        <div class="card">
+                            <div class="card__header">
+                                <h3>Fines Summary</h3>
+                            </div>
+                            <div class="card__body">
+                                <div class="summary-container">
+                                    <div class="total-box">
+                                        <h4>Total Fines</h4>
+                                        <p class="total-amount">€<span id="total-fines-amount">0</span></p>
+                                    </div>
+                                    
+                                    <h4>Fines by Person</h4>
+                                    <table class="summary-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Total Fines</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="summary-table-body">
+                                            <!-- Summary will be populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                    <p id="no-summary-message" class="mt-8 text-center">No fines recorded yet!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Friday Activities Page -->
+        <section id="friday" class="page">
+            <h2>Friday Activities</h2>
+            <p>July 4th is our free day! Vote on what activities you'd like to do or suggest new ones.</p>
+            
+            <div class="card mt-8">
+                <div class="card__header">
+                    <h3>Add Activity Suggestion</h3>
+                </div>
+                <div class="card__body">
+                    <form id="activity-form" class="activity-form">
+                        <div class="form-group">
+                            <label for="activity-category" class="form-label">Category</label>
+                            <select id="activity-category" class="form-control" required>
+                                <option value="Beach">Beach</option>
+                                <option value="Water Activities">Water Activities</option>
+                                <option value="Cultural">Cultural</option>
+                                <option value="Adventure">Adventure</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="activity-name" class="form-label">Activity Name</label>
+                            <input type="text" id="activity-name" class="form-control" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="activity-description" class="form-label">Description</label>
+                            <textarea id="activity-description" class="form-control" rows="2" required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn--primary">Add Suggestion</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="activities-container mt-8" id="activities-container">
+                <!-- Activity categories will be populated by JavaScript -->
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2025 Portugal Golf Trip | Created with ❤️ for the squad</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
