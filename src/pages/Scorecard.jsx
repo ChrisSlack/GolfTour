@@ -27,6 +27,7 @@ export default function Scorecard() {
   const [selectedScore, setSelectedScore] = useState(null); // For "Enter" button requirement
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
+  const [editMode, setEditMode] = useState(false); // For edit button requirement
 
   useEffect(() => {
     // Check if mobile
@@ -177,6 +178,20 @@ export default function Scorecard() {
 
   // Mobile score selection (tap to select, tap Enter to confirm)
   const handleMobileScoreSelect = (score) => {
+    // Only allow selection if in edit mode or no existing score
+    const currentPlayerData = getCurrentPlayer();
+    if (!currentPlayerData) return;
+    
+    const existingScore = scores[currentPlayerData.id]?.[currentHole - 1];
+    
+    if (existingScore && !editMode) {
+      // Show edit button requirement
+      setWarningMessage('Tap "Edit" to change this score');
+      setShowWarning(true);
+      setTimeout(() => setShowWarning(false), 2000);
+      return;
+    }
+    
     setSelectedScore(score);
   };
 
@@ -188,6 +203,7 @@ export default function Scorecard() {
     
     handleScoreChange(playerId, holeIndex, selectedScore.toString());
     setSelectedScore(null); // Clear selection after entry
+    setEditMode(false); // Exit edit mode after entry
     
     // Auto-advance to next player or hole
     if (currentPlayer < selectedPlayers.length - 1) {
@@ -335,6 +351,7 @@ export default function Scorecard() {
     setCurrentHole(holeNumber);
     setCurrentPlayer(0);
     setSelectedScore(null); // Clear any selected score
+    setEditMode(false); // Reset edit mode
   };
 
   const handlePlayerNavigation = (direction) => {
@@ -356,6 +373,7 @@ export default function Scorecard() {
       }
     }
     setSelectedScore(null); // Clear any selected score when navigating
+    setEditMode(false); // Reset edit mode when navigating
   };
 
   const getHoleLength = (holeNumber) => {
@@ -488,7 +506,11 @@ export default function Scorecard() {
                 <div 
                   key={playerId}
                   className={`player-scroll-item ${isActive ? 'player-scroll-item--active' : ''}`}
-                  onClick={() => setCurrentPlayer(index)}
+                  onClick={() => {
+                    setCurrentPlayer(index);
+                    setSelectedScore(null);
+                    setEditMode(false);
+                  }}
                 >
                   <div className="player-name">{player?.name} {player?.surname}</div>
                   <div className="player-handicap">HCP {player?.handicap}</div>
@@ -521,6 +543,19 @@ export default function Scorecard() {
             )}
           </div>
         </div>
+
+        {/* Edit Button for Existing Scores */}
+        {currentScore && !editMode && (
+          <div className="mobile-actions">
+            <button 
+              className="mobile-action-btn btn btn--secondary"
+              onClick={() => setEditMode(true)}
+            >
+              <i className="fas fa-edit"></i>
+              Edit Score
+            </button>
+          </div>
+        )}
 
         {/* Score Entry Grid */}
         <div className="mobile-score-grid">
@@ -623,6 +658,7 @@ export default function Scorecard() {
               const holeIndex = currentHole - 1;
               handleScoreChange(playerId, holeIndex, '');
               setSelectedScore(null);
+              setEditMode(false);
             }}
           >
             Clear Score
@@ -731,6 +767,7 @@ export default function Scorecard() {
                 setCurrentHole(1);
                 setCurrentPlayer(0);
                 setSelectedScore(null);
+                setEditMode(false);
                 setMobileView('hole-entry');
               }}
             >
@@ -756,7 +793,7 @@ export default function Scorecard() {
               </button>
             </div>
 
-            {/* Mobile Full Scorecard Display */}
+            {/* Mobile Full Scorecard Display - SWAPPED LAYOUT */}
             {selectedPlayers.length > 0 && (
               <div className="mt-8">
                 <h4 className="mb-4">Full Scorecard</h4>
@@ -764,36 +801,54 @@ export default function Scorecard() {
                   <table className="w-full text-sm border">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="p-2 border text-left">Player</th>
-                        {Array.from({ length: 18 }, (_, i) => (
-                          <th key={i} className="p-1 border text-center min-w-8">{i + 1}</th>
-                        ))}
-                        <th className="p-2 border text-center">Total</th>
+                        <th className="p-2 border text-left">Hole</th>
+                        {selectedPlayers.map(playerId => {
+                          const player = users.find(u => u.id === playerId);
+                          return (
+                            <th key={playerId} className="p-2 border text-center min-w-20">
+                              <div>{player?.name} {player?.surname}</div>
+                              <div className="text-xs text-gray-600">HCP: {player?.handicap}</div>
+                            </th>
+                          );
+                        })}
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedPlayers.map(playerId => {
-                        const player = users.find(u => u.id === playerId);
-                        const playerScores = scores[playerId] || Array(18).fill('');
-                        const total = calculateTotal(playerId, 0, 18);
+                      {Array.from({ length: 18 }, (_, holeIndex) => {
+                        const holeNumber = holeIndex + 1;
+                        const holePar = holeData[holeIndex]?.par || 4;
                         
                         return (
-                          <tr key={playerId} className="border-b">
+                          <tr key={holeNumber} className="border-b">
                             <td className="p-2 border font-medium">
-                              <div>{player?.name} {player?.surname}</div>
-                              <div className="text-xs text-gray-600">HCP: {player?.handicap}</div>
+                              <div>Hole {holeNumber}</div>
+                              <div className="text-xs text-gray-600">Par {holePar}</div>
                             </td>
-                            {playerScores.map((score, holeIndex) => (
-                              <td key={holeIndex} className="p-1 border text-center">
-                                {score || '-'}
-                              </td>
-                            ))}
-                            <td className="p-2 border text-center font-bold">
-                              {total || '-'}
-                            </td>
+                            {selectedPlayers.map(playerId => {
+                              const playerScores = scores[playerId] || Array(18).fill('');
+                              const score = playerScores[holeIndex];
+                              
+                              return (
+                                <td key={playerId} className="p-2 border text-center">
+                                  {score || '-'}
+                                </td>
+                              );
+                            })}
                           </tr>
                         );
                       })}
+                      {/* Total Row */}
+                      <tr className="bg-gray-100 font-bold">
+                        <td className="p-2 border">Total</td>
+                        {selectedPlayers.map(playerId => {
+                          const total = calculateTotal(playerId, 0, 18);
+                          return (
+                            <td key={playerId} className="p-2 border text-center">
+                              {total || '-'}
+                            </td>
+                          );
+                        })}
+                      </tr>
                     </tbody>
                   </table>
                 </div>
