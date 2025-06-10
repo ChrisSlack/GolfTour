@@ -239,7 +239,7 @@ export const db = {
     return { data, error };
   },
 
-  saveScore: async (userId, courseId, holeNumber, strokes, recordedBy) => {
+  saveScore: async (userId, courseId, holeNumber, strokes, recordedBy, threePutt = false, ring = false) => {
     const { data, error } = await supabase
       .from('scores')
       .upsert({
@@ -247,21 +247,30 @@ export const db = {
         course_id: courseId,
         hole_number: holeNumber,
         strokes,
-        recorded_by: recordedBy
+        recorded_by: recordedBy,
+        three_putt: threePutt,
+        ring: ring
       })
       .select()
       .single();
     return { data, error };
   },
 
-  saveScorecard: async (userId, courseId, scores, recordedBy) => {
-    const scoreData = scores.map((strokes, index) => ({
-      user_id: userId,
-      course_id: courseId,
-      hole_number: index + 1,
-      strokes: parseInt(strokes) || null,
-      recorded_by: recordedBy
-    })).filter(score => score.strokes !== null);
+  saveScorecard: async (userId, courseId, scores, recordedBy, scoreExtras = {}) => {
+    const scoreData = scores.map((strokes, index) => {
+      const holeNumber = index + 1;
+      const extras = scoreExtras[holeNumber] || {};
+      
+      return {
+        user_id: userId,
+        course_id: courseId,
+        hole_number: holeNumber,
+        strokes: parseInt(strokes) || null,
+        recorded_by: recordedBy,
+        three_putt: extras.threePutt || false,
+        ring: extras.ring || false
+      };
+    }).filter(score => score.strokes !== null);
 
     const { data, error } = await supabase
       .from('scores')
@@ -279,6 +288,27 @@ export const db = {
       .eq('user_id', userId)
       .eq('course_id', courseId);
     return { error };
+  },
+
+  // Get score statistics for leaderboard
+  getScoreStatistics: async (courseId, userId = null) => {
+    let query = supabase
+      .from('scores')
+      .select(`
+        user_id,
+        strokes,
+        three_putt,
+        ring,
+        course:course_id(par, holes)
+      `)
+      .eq('course_id', courseId);
+    
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
+    
+    const { data, error } = await query;
+    return { data, error };
   },
 
   // Fines

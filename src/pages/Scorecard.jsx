@@ -12,6 +12,7 @@ export default function Scorecard() {
   const [users, setUsers] = useState([]);
   const [selectedPlayers, setSelectedPlayers] = useState([]);
   const [scores, setScores] = useState({});
+  const [scoreExtras, setScoreExtras] = useState({}); // For 3-putts and rings
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -85,6 +86,7 @@ export default function Scorecard() {
   const loadScores = async () => {
     if (!selectedCourse || selectedPlayers.length === 0) {
       setScores({});
+      setScoreExtras({});
       return;
     }
 
@@ -93,17 +95,30 @@ export default function Scorecard() {
       
       // Organize scores by user and hole
       const organizedScores = {};
+      const organizedExtras = {};
+      
       selectedPlayers.forEach(playerId => {
         organizedScores[playerId] = Array(18).fill('');
+        organizedExtras[playerId] = {};
       });
 
       scoresData?.forEach(score => {
         if (organizedScores[score.user_id]) {
           organizedScores[score.user_id][score.hole_number - 1] = score.strokes.toString();
+          
+          // Load extras (3-putts and rings)
+          if (!organizedExtras[score.user_id]) {
+            organizedExtras[score.user_id] = {};
+          }
+          organizedExtras[score.user_id][score.hole_number] = {
+            threePutt: score.three_putt || false,
+            ring: score.ring || false
+          };
         }
       });
 
       setScores(organizedScores);
+      setScoreExtras(organizedExtras);
     } catch (error) {
       console.error('Error loading scores:', error);
     }
@@ -141,6 +156,19 @@ export default function Scorecard() {
     });
   };
 
+  const handleExtraChange = (playerId, holeNumber, extraType, value) => {
+    setScoreExtras(prev => ({
+      ...prev,
+      [playerId]: {
+        ...prev[playerId],
+        [holeNumber]: {
+          ...prev[playerId]?.[holeNumber],
+          [extraType]: value
+        }
+      }
+    }));
+  };
+
   const handleSaveScorecard = async () => {
     if (!selectedCourse || !user) return;
 
@@ -149,7 +177,8 @@ export default function Scorecard() {
       // Save scores for each selected player
       for (const playerId of selectedPlayers) {
         const playerScores = scores[playerId] || Array(18).fill('');
-        await db.saveScorecard(playerId, selectedCourse.id, playerScores, user.id);
+        const playerExtras = scoreExtras[playerId] || {};
+        await db.saveScorecard(playerId, selectedCourse.id, playerScores, user.id, playerExtras);
       }
       
       alert('Scorecard saved successfully!');
@@ -428,6 +457,8 @@ export default function Scorecard() {
                           const playerScores = scores[playerId] || [];
                           const grossValue = playerScores[holeIndex] || '';
                           const grossScore = parseInt(grossValue, 10);
+                          const holeNumber = holeIndex + 1;
+                          const extras = scoreExtras[playerId]?.[holeNumber] || {};
                           
                           let className = 'score-par';
                           
@@ -446,16 +477,40 @@ export default function Scorecard() {
 
                           return (
                             <td key={holeIndex} className={className}>
-                              <input
-                                type="number"
-                                className="form-control"
-                                value={grossValue}
-                                onChange={(e) => handleScoreChange(playerId, holeIndex, e.target.value)}
-                                style={{ width: '4rem', textAlign: 'center' }}
-                                min="1"
-                                max="12"
-                                placeholder="1-12"
-                              />
+                              <div className="flex flex-col items-center gap-1">
+                                <input
+                                  type="number"
+                                  className="form-control"
+                                  value={grossValue}
+                                  onChange={(e) => handleScoreChange(playerId, holeIndex, e.target.value)}
+                                  style={{ width: '4rem', textAlign: 'center' }}
+                                  min="1"
+                                  max="12"
+                                  placeholder="1-12"
+                                />
+                                <div className="flex gap-1">
+                                  <label className="flex items-center text-xs cursor-pointer" title="3-Putt">
+                                    <input
+                                      type="checkbox"
+                                      checked={extras.threePutt || false}
+                                      onChange={(e) => handleExtraChange(playerId, holeNumber, 'threePutt', e.target.checked)}
+                                      className="mr-1"
+                                      style={{ transform: 'scale(0.8)' }}
+                                    />
+                                    3P
+                                  </label>
+                                  <label className="flex items-center text-xs cursor-pointer" title="Ring (Hit the Pin)">
+                                    <input
+                                      type="checkbox"
+                                      checked={extras.ring || false}
+                                      onChange={(e) => handleExtraChange(playerId, holeNumber, 'ring', e.target.checked)}
+                                      className="mr-1"
+                                      style={{ transform: 'scale(0.8)' }}
+                                    />
+                                    🎯
+                                  </label>
+                                </div>
+                              </div>
                             </td>
                           );
                         })}

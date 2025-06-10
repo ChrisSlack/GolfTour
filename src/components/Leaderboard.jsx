@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../lib/supabase';
 import courseRatings from '../data/courseRatings';
+import scorecards from '../data/scorecards';
 
 export default function Leaderboard() {
   const [leaderboardData, setLeaderboardData] = useState([]);
@@ -23,7 +24,6 @@ export default function Leaderboard() {
     }
 
     // USGA Formula: Course Handicap = Handicap Index × (Slope Rating ÷ 113)
-    // Note: We're not adding (Course Rating - Par) as it's typically used for different tee calculations
     const courseHandicap = handicapIndex * (courseData.slopeRating / 113);
     return Math.round(courseHandicap);
   };
@@ -42,6 +42,41 @@ export default function Leaderboard() {
     if (name.includes('amendoeira') || name.includes('faldo')) return 'amendoeira';
     if (name.includes('quinta') || name.includes('lago')) return 'quintadolago';
     return null;
+  };
+
+  // Calculate golf statistics (eagles, birdies, etc.)
+  const calculateGolfStats = (scores, courseKey) => {
+    const stats = {
+      eagles: 0,
+      birdies: 0,
+      pars: 0,
+      bogeys: 0,
+      doubleBogeys: 0,
+      threePutts: 0,
+      rings: 0
+    };
+
+    // Get hole data for par information
+    const holeData = scorecards[courseKey]?.holes || Array(18).fill({ par: 4 });
+
+    scores.forEach((score, index) => {
+      const par = holeData[index]?.par || 4;
+      const strokes = score.strokes;
+      const diff = strokes - par;
+
+      // Count score types
+      if (diff <= -2) stats.eagles++;
+      else if (diff === -1) stats.birdies++;
+      else if (diff === 0) stats.pars++;
+      else if (diff === 1) stats.bogeys++;
+      else if (diff >= 2) stats.doubleBogeys++;
+
+      // Count extras
+      if (score.three_putt) stats.threePutts++;
+      if (score.ring) stats.rings++;
+    });
+
+    return stats;
   };
 
   const loadLeaderboardData = async () => {
@@ -86,7 +121,16 @@ export default function Leaderboard() {
           totalGrossScore: 0,
           totalNetScore: 0,
           totalPar: 0,
-          coursesPlayed: 0
+          coursesPlayed: 0,
+          totalStats: {
+            eagles: 0,
+            birdies: 0,
+            pars: 0,
+            bogeys: 0,
+            doubleBogeys: 0,
+            threePutts: 0,
+            rings: 0
+          }
         };
 
         // Process each team member
@@ -99,7 +143,16 @@ export default function Leaderboard() {
             totalGrossScore: 0,
             totalNetScore: 0,
             totalPar: 0,
-            coursesPlayed: 0
+            coursesPlayed: 0,
+            totalStats: {
+              eagles: 0,
+              birdies: 0,
+              pars: 0,
+              bogeys: 0,
+              doubleBogeys: 0,
+              threePutts: 0,
+              rings: 0
+            }
           };
 
           // Get scores for each course
@@ -119,6 +172,9 @@ export default function Leaderboard() {
               // Calculate net total using USGA method
               const courseNetTotal = calculateNetScore(courseGrossTotal, courseHandicap);
               
+              // Calculate golf statistics
+              const courseStats = calculateGolfStats(scoresData, courseKey);
+              
               memberData.scores.push({
                 courseId: course.id,
                 courseName: course.name,
@@ -128,13 +184,19 @@ export default function Leaderboard() {
                 par: coursePar,
                 courseHandicap: courseHandicap,
                 grossToPar: courseGrossTotal - coursePar,
-                netToPar: courseNetTotal - coursePar
+                netToPar: courseNetTotal - coursePar,
+                stats: courseStats
               });
               
               memberData.totalGrossScore += courseGrossTotal;
               memberData.totalNetScore += courseNetTotal;
               memberData.totalPar += coursePar;
               memberData.coursesPlayed++;
+
+              // Add to member's total stats
+              Object.keys(courseStats).forEach(key => {
+                memberData.totalStats[key] += courseStats[key];
+              });
             }
           }
 
@@ -142,6 +204,11 @@ export default function Leaderboard() {
           teamData.totalGrossScore += memberData.totalGrossScore;
           teamData.totalNetScore += memberData.totalNetScore;
           teamData.totalPar += memberData.totalPar;
+
+          // Add to team's total stats
+          Object.keys(memberData.totalStats).forEach(key => {
+            teamData.totalStats[key] += memberData.totalStats[key];
+          });
         }
 
         // Calculate team average courses played
@@ -259,7 +326,8 @@ export default function Leaderboard() {
             <strong>USGA Net Scoring:</strong><br/>
             • <strong>Course Handicap</strong> = Handicap Index × (Slope Rating ÷ 113)<br/>
             • <strong>Net Score</strong> = Gross Score - Course Handicap (minimum 1)<br/>
-            • Course ratings: Morgado (Slope: 129), Amendoeira (Slope: 142), Quinta do Lago (Slope: 139)
+            • Course ratings: Morgado (Slope: 129), Amendoeira (Slope: 142), Quinta do Lago (Slope: 139)<br/>
+            • <strong>Statistics:</strong> 🦅 Eagles, 🐦 Birdies, ⚪ Pars, 🟡 Bogeys, 🔴 Double+, 3P = 3-Putts, 🎯 = Rings
           </p>
         </div>
 
@@ -292,6 +360,9 @@ export default function Leaderboard() {
                   </div>
                   <div className="text-sm text-gray-600">
                     Team Total ({showNet ? 'Net' : 'Gross'})
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    🦅{team.totalStats.eagles} 🐦{team.totalStats.birdies} ⚪{team.totalStats.pars} 🟡{team.totalStats.bogeys} 🔴{team.totalStats.doubleBogeys} | 3P:{team.totalStats.threePutts} 🎯{team.totalStats.rings}
                   </div>
                 </div>
               </div>
@@ -333,6 +404,7 @@ export default function Leaderboard() {
                         </th>
                       )}
                       <th className="text-center p-2 font-bold">Total ({showNet ? 'Net' : 'Gross'})</th>
+                      <th className="text-center p-2">Stats</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -370,6 +442,12 @@ export default function Leaderboard() {
                                           CH: {courseScore.courseHandicap}
                                         </div>
                                       )}
+                                      <div className="text-xs text-gray-500">
+                                        🦅{courseScore.stats.eagles} 🐦{courseScore.stats.birdies} ⚪{courseScore.stats.pars} 🟡{courseScore.stats.bogeys} 🔴{courseScore.stats.doubleBogeys}
+                                      </div>
+                                      <div className="text-xs text-gray-500">
+                                        3P:{courseScore.stats.threePutts} 🎯{courseScore.stats.rings}
+                                      </div>
                                     </div>
                                   ) : '-'}
                                 </td>
@@ -392,6 +470,12 @@ export default function Leaderboard() {
                                       Course HCP: {member.scores[0].courseHandicap}
                                     </div>
                                   )}
+                                  <div className="text-xs text-gray-500">
+                                    🦅{member.scores[0].stats.eagles} 🐦{member.scores[0].stats.birdies} ⚪{member.scores[0].stats.pars} 🟡{member.scores[0].stats.bogeys} 🔴{member.scores[0].stats.doubleBogeys}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    3P:{member.scores[0].stats.threePutts} 🎯{member.scores[0].stats.rings}
+                                  </div>
                                 </div>
                               ) : '-'}
                             </td>
@@ -403,6 +487,13 @@ export default function Leaderboard() {
                               member.totalPar, 
                               showNet
                             ) : '-'}
+                          </td>
+                          <td className="p-2 text-center">
+                            <div className="text-xs">
+                              <div>🦅{member.totalStats.eagles} 🐦{member.totalStats.birdies} ⚪{member.totalStats.pars}</div>
+                              <div>🟡{member.totalStats.bogeys} 🔴{member.totalStats.doubleBogeys}</div>
+                              <div>3P:{member.totalStats.threePutts} 🎯{member.totalStats.rings}</div>
+                            </div>
                           </td>
                         </tr>
                       ))}
