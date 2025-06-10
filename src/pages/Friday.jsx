@@ -5,8 +5,13 @@ const STORAGE_KEY = 'golf_trip_activities';
 
 export default function Friday() {
   const [activities, setActivities] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : fridayActivities;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : fridayActivities;
+    } catch (err) {
+      console.error('Failed to parse activities from storage', err);
+      return fridayActivities;
+    }
   });
 
   useEffect(() => {
@@ -14,18 +19,19 @@ export default function Friday() {
   }, [activities]);
 
   const vote = (categoryName, activityName) => {
-    const updated = activities.map(cat => {
-      if (cat.category === categoryName) {
-        return {
-          ...cat,
-          activities: cat.activities.map(act =>
-            act.name === activityName ? { ...act, votes: act.votes + 1 } : act
-          )
-        };
-      }
-      return cat;
-    });
-    setActivities(updated);
+    setActivities(prev =>
+      prev.map(cat => {
+        if (cat.category === categoryName) {
+          return {
+            ...cat,
+            activities: cat.activities.map(act =>
+              act.name === activityName ? { ...act, votes: act.votes + 1 } : act
+            )
+          };
+        }
+        return cat;
+      })
+    );
   };
 
   return (

@@ -5,8 +5,13 @@ const STORAGE_KEY = 'golf_trip_fines';
 
 export default function Fines() {
   const [fines, setFines] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch (err) {
+      console.error('Failed to parse fines from storage', err);
+      return [];
+    }
   });
 
   const [form, setForm] = useState({ name: '', type: fineCategories[0].name, description: '' });
@@ -18,7 +23,14 @@ export default function Fines() {
   const addFine = e => {
     e.preventDefault();
     const category = fineCategories.find(c => c.name === form.type);
-    setFines([...fines, { ...form, amount: category.amount, date: new Date().toLocaleDateString() }]);
+    if (!category) return;
+    const newFine = {
+      id: Date.now(),
+      ...form,
+      amount: category.amount,
+      date: new Date().toLocaleDateString()
+    };
+    setFines(prev => [...prev, newFine]);
     setForm({ name: '', type: fineCategories[0].name, description: '' });
   };
 
@@ -60,8 +72,8 @@ export default function Fines() {
               </tr>
             </thead>
             <tbody>
-              {fines.map((fine, idx) => (
-                <tr key={idx}>
+              {fines.map(fine => (
+                <tr key={fine.id}>
                   <td>{fine.name}</td>
                   <td>{fine.type}</td>
                   <td>€{fine.amount}</td>
