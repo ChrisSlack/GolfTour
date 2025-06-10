@@ -34,10 +34,10 @@ export default function AuthProvider({ children }) {
       try {
         console.log('📡 Calling auth.getCurrentUser()...');
         
-        // Add timeout to getCurrentUser
+        // Increase timeout to 15 seconds for getCurrentUser
         const { data: { user: authUser }, error } = await withTimeout(
           auth.getCurrentUser(),
-          8000,
+          15000,
           'getCurrentUser'
         );
         
