@@ -7,7 +7,19 @@ export default function Friday() {
   const [activities, setActivities] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : fridayActivities;
+      const parsed = saved ? JSON.parse(saved) : [];
+      // Merge saved votes with the latest activity list so new
+      // categories or activities appear for returning users
+      return fridayActivities.map(cat => {
+        const savedCat = parsed.find(c => c.category === cat.category);
+        return {
+          category: cat.category,
+          activities: cat.activities.map(act => {
+            const savedAct = savedCat?.activities.find(a => a.name === act.name);
+            return savedAct ? { ...act, votes: savedAct.votes } : act;
+          })
+        };
+      });
     } catch (err) {
       console.error('Failed to parse activities from storage', err);
       return fridayActivities;
