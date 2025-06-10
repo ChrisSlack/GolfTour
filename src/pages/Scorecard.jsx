@@ -37,8 +37,8 @@ export default function Scorecard() {
       return Math.round(handicapIndex);
     }
 
-    // USGA Formula: Course Handicap = Handicap Index × (Slope Rating ÷ 113)
-    const courseHandicap = handicapIndex * (courseData.slopeRating / 113);
+    // USGA Formula: Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating - Par)
+    const courseHandicap = handicapIndex * (courseData.slopeRating / 113) + (courseData.courseRating - courseData.par);
     return Math.round(courseHandicap);
   };
 
@@ -66,24 +66,30 @@ export default function Scorecard() {
     
     if (courseHandicap <= 0) return strokesPerHole;
     
-    // Sort holes by stroke index to allocate strokes
+    // Create array of holes with their stroke indices, sorted by stroke index
     const holesWithIndex = holeData.map((hole, index) => ({
       holeNumber: index,
       strokeIndex: hole.hcp || (index + 1)
     })).sort((a, b) => a.strokeIndex - b.strokeIndex);
     
-    // Allocate strokes
-    let remainingStrokes = courseHandicap;
+    // Allocate strokes based on course handicap
+    let remainingStrokes = Math.abs(courseHandicap);
     
-    // First round: give one stroke to holes based on stroke index
+    // First pass: give one stroke to holes in stroke index order
     for (let i = 0; i < Math.min(18, remainingStrokes); i++) {
       strokesPerHole[holesWithIndex[i].holeNumber] = 1;
     }
     remainingStrokes -= Math.min(18, remainingStrokes);
     
-    // Second round: give second stroke if handicap > 18
+    // Second pass: give second stroke if handicap > 18
     for (let i = 0; i < Math.min(18, remainingStrokes); i++) {
       strokesPerHole[holesWithIndex[i].holeNumber] = 2;
+    }
+    remainingStrokes -= Math.min(18, remainingStrokes);
+    
+    // Third pass: give third stroke if handicap > 36 (rare but possible)
+    for (let i = 0; i < Math.min(18, remainingStrokes); i++) {
+      strokesPerHole[holesWithIndex[i].holeNumber] = 3;
     }
     
     return strokesPerHole;
@@ -295,7 +301,8 @@ export default function Scorecard() {
     
     if (useNet && !useStableford) {
       // Calculate net total using USGA method
-      const netTotal = calculateNetScore(total, Math.round(courseHandicap * (validScores / 18)));
+      const proportionalHandicap = Math.round(courseHandicap * (validScores / 18));
+      const netTotal = calculateNetScore(total, proportionalHandicap);
       return netTotal;
     }
     
@@ -476,12 +483,17 @@ export default function Scorecard() {
                   • <strong>Points:</strong> Albatross=5, Eagle=4, Birdie=3, Par=2, Bogey=1, Double+=0<br/>
                   • <strong>Net Score per Hole:</strong> Gross Strokes - Handicap Strokes on that hole<br/>
                   • <strong>Handicap Strokes:</strong> Allocated by hole difficulty (Stroke Index)<br/>
-                  • <strong>Course Handicap:</strong> {courseData ? `${Math.round(18 * (courseData.slopeRating / 113))} strokes for 18 HCP` : 'Calculated per player'}
+                  • <strong>Course Handicap Formula:</strong> Handicap Index × (Slope ÷ 113) + (Course Rating - Par)<br/>
+                  {courseData && (
+                    <>
+                      <strong>This Course:</strong> Example for 18 HCP = {Math.round(18 * (courseData.slopeRating / 113) + (courseData.courseRating - courseData.par))} strokes
+                    </>
+                  )}
                 </p>
               ) : (
                 <p className="text-sm text-yellow-800">
                   <strong>USGA Net Scoring:</strong> Net Score = Gross Score - Course Handicap (minimum 1)<br/>
-                  <strong>Course Handicap</strong> = Handicap Index × (Slope Rating ÷ 113)<br/>
+                  <strong>Course Handicap</strong> = Handicap Index × (Slope Rating ÷ 113) + (Course Rating - Par)<br/>
                   {courseData && (
                     <>
                       <strong>This Course:</strong> Slope Rating {courseData.slopeRating}, Course Rating {courseData.courseRating}
