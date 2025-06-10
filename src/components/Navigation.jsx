@@ -22,8 +22,8 @@ export default function Navigation({ current, onNavigate }) {
               {links.map(link => (
                 <li key={link.id}>
                   <a
-                    href="#"
-                    onClick={e => { e.preventDefault(); onNavigate(link.id); }}
+                    href={`#${link.id}`}
+                    onClick={() => onNavigate && onNavigate(link.id)}
                     className={`nav-link${current === link.id ? ' active' : ''}`}
                   >
                     {link.label}

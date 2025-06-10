@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import fineCategories from '../data/fines';
+import { generateId } from '../utils/id';
 
 const STORAGE_KEY = 'golf_trip_fines';
 
@@ -25,7 +26,7 @@ export default function Fines() {
     const category = fineCategories.find(c => c.name === form.type);
     if (!category) return;
     const newFine = {
-      id: Date.now(),
+      id: generateId(),
       ...form,
       amount: category.amount,
       date: new Date().toLocaleDateString()
@@ -34,7 +35,7 @@ export default function Fines() {
     setForm({ name: '', type: fineCategories[0].name, description: '' });
   };
 
-  const total = fines.reduce((sum, f) => sum + parseFloat(f.amount), 0);
+  const total = fines.reduce((sum, f) => sum + f.amount, 0);
 
   return (
     <section className="page" id="fines">
