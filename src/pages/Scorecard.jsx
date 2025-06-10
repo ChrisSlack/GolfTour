@@ -13,6 +13,7 @@ export default function Scorecard() {
   const [scores, setScores] = useState({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -88,6 +89,12 @@ export default function Scorecard() {
   };
 
   const handleScoreChange = (playerId, holeIndex, value) => {
+    // Validate score: must be between 1 and 12
+    const numValue = parseInt(value, 10);
+    if (value !== '' && (isNaN(numValue) || numValue < 1 || numValue > 12)) {
+      return; // Don't update if invalid
+    }
+
     setScores(prev => {
       // Get the current scores array for this player, or create a new one
       const currentPlayerScores = prev[playerId] || Array(18).fill('');
@@ -121,6 +128,31 @@ export default function Scorecard() {
       alert('Error saving scorecard: ' + error.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteScorecard = async () => {
+    if (!selectedCourse || selectedPlayers.length === 0) return;
+
+    const confirmDelete = window.confirm(
+      `Are you sure you want to delete scorecards for ${selectedPlayers.length} player(s) on ${selectedCourse.name}? This action cannot be undone.`
+    );
+
+    if (!confirmDelete) return;
+
+    setDeleting(true);
+    try {
+      for (const playerId of selectedPlayers) {
+        await db.deleteScorecard(playerId, selectedCourse.id);
+      }
+      
+      alert('Scorecard(s) deleted successfully!');
+      await loadScores(); // Reload to show updated data
+    } catch (error) {
+      console.error('Error deleting scorecard:', error);
+      alert('Error deleting scorecard: ' + error.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -231,13 +263,28 @@ export default function Scorecard() {
           <div className="card__body">
             <div className="flex justify-between items-center mb-4">
               <h3>{selectedCourse.name}</h3>
-              <button
-                className="btn btn--primary"
-                onClick={handleSaveScorecard}
-                disabled={saving}
-              >
-                {saving ? 'Saving...' : 'Save Scorecard'}
-              </button>
+              <div className="flex gap-4">
+                <button
+                  className="btn btn--secondary"
+                  onClick={handleDeleteScorecard}
+                  disabled={deleting}
+                >
+                  {deleting ? 'Deleting...' : 'Delete Scorecard'}
+                </button>
+                <button
+                  className="btn btn--primary"
+                  onClick={handleSaveScorecard}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save Scorecard'}
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-sm text-yellow-800">
+                <strong>Scoring Rules:</strong> Scores must be between 1 and 12 strokes per hole.
+              </p>
             </div>
 
             <div className="scorecard-table-container">
@@ -308,7 +355,8 @@ export default function Scorecard() {
                                 onChange={(e) => handleScoreChange(playerId, holeIndex, e.target.value)}
                                 style={{ width: '4rem', textAlign: 'center' }}
                                 min="1"
-                                max="15"
+                                max="12"
+                                placeholder="1-12"
                               />
                             </td>
                           );

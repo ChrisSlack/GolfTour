@@ -90,6 +90,24 @@ export default function Teams() {
 
   const handleAddMember = async (teamId, userId) => {
     try {
+      // Check if user is already in another team
+      const userCurrentTeam = teams.find(team => 
+        team.team_members?.some(member => member.user.id === userId)
+      );
+
+      if (userCurrentTeam) {
+        const confirmSwitch = window.confirm(
+          `This user is already in team "${userCurrentTeam.name}". Do you want to move them to this team?`
+        );
+        
+        if (confirmSwitch) {
+          // Remove from current team first
+          await db.removeTeamMember(userCurrentTeam.id, userId);
+        } else {
+          return;
+        }
+      }
+
       const { error } = await db.addTeamMember(teamId, userId);
       if (!error) {
         loadData(); // Reload teams
@@ -110,12 +128,47 @@ export default function Teams() {
     }
   };
 
+  const handleSwitchTeam = async (userId, newTeamId) => {
+    try {
+      // Find current team
+      const currentTeam = teams.find(team => 
+        team.team_members?.some(member => member.user.id === userId)
+      );
+
+      if (currentTeam) {
+        // Remove from current team
+        await db.removeTeamMember(currentTeam.id, userId);
+      }
+
+      // Add to new team
+      await db.addTeamMember(newTeamId, userId);
+      loadData(); // Reload teams
+    } catch (error) {
+      console.error('Error switching team:', error);
+      alert('Error switching team: ' + error.message);
+    }
+  };
+
   const getAvailableUsers = (teamId) => {
     const teamMemberIds = teams
       .find(t => t.id === teamId)
       ?.team_members?.map(tm => tm.user.id) || [];
     
     return users.filter(user => !teamMemberIds.includes(user.id));
+  };
+
+  const getUserCurrentTeam = (userId) => {
+    return teams.find(team => 
+      team.team_members?.some(member => member.user.id === userId)
+    );
+  };
+
+  const getAvailableTeamsForUser = (userId) => {
+    return teams.filter(team => {
+      const teamMemberCount = team.team_members?.length || 0;
+      const isUserInTeam = team.team_members?.some(member => member.user.id === userId);
+      return teamMemberCount < 4 && !isUserInTeam;
+    });
   };
 
   if (loading) {
@@ -355,7 +408,7 @@ export default function Teams() {
         </div>
       )}
 
-      {/* Users List */}
+      {/* Users List with Team Switching */}
       <div className="card mt-8">
         <div className="card__body">
           <h3>All Users ({users.length})</h3>
@@ -366,14 +419,14 @@ export default function Teams() {
                   <th className="text-left p-2">Name</th>
                   <th className="text-left p-2">Email</th>
                   <th className="text-center p-2">Handicap</th>
-                  <th className="text-left p-2">Team</th>
+                  <th className="text-left p-2">Current Team</th>
+                  <th className="text-left p-2">Switch Team</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(user => {
-                  const userTeam = teams.find(team => 
-                    team.team_members?.some(member => member.user.id === user.id)
-                  );
+                  const userTeam = getUserCurrentTeam(user.id);
+                  const availableTeams = getAvailableTeamsForUser(user.id);
                   
                   return (
                     <tr key={user.id} className="border-b">
@@ -387,6 +440,28 @@ export default function Teams() {
                           </span>
                         ) : (
                           <span className="text-sm text-gray-500">No team</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {(isAdmin || userProfile?.id === user.id) && availableTeams.length > 0 && (
+                          <select
+                            className="form-control text-sm"
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                handleSwitchTeam(user.id, e.target.value);
+                                e.target.value = '';
+                              }
+                            }}
+                          >
+                            <option value="">
+                              {userTeam ? 'Switch to...' : 'Join team...'}
+                            </option>
+                            {availableTeams.map(team => (
+                              <option key={team.id} value={team.id}>
+                                {team.name} ({team.team_members?.length || 0}/4)
+                              </option>
+                            ))}
+                          </select>
                         )}
                       </td>
                     </tr>

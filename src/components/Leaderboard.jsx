@@ -7,10 +7,11 @@ export default function Leaderboard() {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourse, setSelectedCourse] = useState('all');
+  const [showNet, setShowNet] = useState(false);
 
   useEffect(() => {
     loadLeaderboardData();
-  }, [selectedCourse]);
+  }, [selectedCourse, showNet]);
 
   const loadLeaderboardData = async () => {
     try {
@@ -51,7 +52,8 @@ export default function Leaderboard() {
           name: team.name,
           captain: team.captain,
           members: [],
-          totalScore: 0,
+          totalGrossScore: 0,
+          totalNetScore: 0,
           totalPar: 0,
           coursesPlayed: 0
         };
@@ -63,7 +65,8 @@ export default function Leaderboard() {
             name: `${member.user.name} ${member.user.surname}`,
             handicap: member.user.handicap,
             scores: [],
-            totalScore: 0,
+            totalGrossScore: 0,
+            totalNetScore: 0,
             totalPar: 0,
             coursesPlayed: 0
           };
@@ -73,25 +76,32 @@ export default function Leaderboard() {
             const { data: scoresData } = await db.getScores(course.id, member.user.id);
             
             if (scoresData && scoresData.length > 0) {
-              const courseTotal = scoresData.reduce((sum, score) => sum + score.strokes, 0);
+              const courseGrossTotal = scoresData.reduce((sum, score) => sum + score.strokes, 0);
               const coursePar = course.par || 72;
+              
+              // Calculate net score (gross - handicap, but not below par)
+              const courseNetTotal = Math.max(courseGrossTotal - member.user.handicap, coursePar);
               
               memberData.scores.push({
                 courseId: course.id,
                 courseName: course.name,
-                total: courseTotal,
+                grossTotal: courseGrossTotal,
+                netTotal: courseNetTotal,
                 par: coursePar,
-                toPar: courseTotal - coursePar
+                grossToPar: courseGrossTotal - coursePar,
+                netToPar: courseNetTotal - coursePar
               });
               
-              memberData.totalScore += courseTotal;
+              memberData.totalGrossScore += courseGrossTotal;
+              memberData.totalNetScore += courseNetTotal;
               memberData.totalPar += coursePar;
               memberData.coursesPlayed++;
             }
           }
 
           teamData.members.push(memberData);
-          teamData.totalScore += memberData.totalScore;
+          teamData.totalGrossScore += memberData.totalGrossScore;
+          teamData.totalNetScore += memberData.totalNetScore;
           teamData.totalPar += memberData.totalPar;
         }
 
@@ -103,12 +113,15 @@ export default function Leaderboard() {
         teamScores.push(teamData);
       }
 
-      // Sort teams by total score (lower is better)
+      // Sort teams by total score (lower is better) - use net or gross based on toggle
       teamScores.sort((a, b) => {
-        if (a.totalScore === 0 && b.totalScore === 0) return 0;
-        if (a.totalScore === 0) return 1;
-        if (b.totalScore === 0) return -1;
-        return a.totalScore - b.totalScore;
+        const aScore = showNet ? a.totalNetScore : a.totalGrossScore;
+        const bScore = showNet ? b.totalNetScore : b.totalGrossScore;
+        
+        if (aScore === 0 && bScore === 0) return 0;
+        if (aScore === 0) return 1;
+        if (bScore === 0) return -1;
+        return aScore - bScore;
       });
 
       setLeaderboardData(teamScores);
@@ -119,12 +132,23 @@ export default function Leaderboard() {
     }
   };
 
-  const formatScore = (score, par) => {
+  const formatScore = (grossScore, netScore, par, useNet = false) => {
+    const score = useNet ? netScore : grossScore;
     if (score === 0) return '-';
     const toPar = score - par;
     if (toPar === 0) return `${score} (E)`;
     if (toPar > 0) return `${score} (+${toPar})`;
     return `${score} (${toPar})`;
+  };
+
+  const getTeamRankIcon = (index, totalTeams) => {
+    if (index === 0 && leaderboardData[0].totalGrossScore > 0) {
+      return <span className="text-2xl" title="Best Team">👑</span>;
+    }
+    if (index === totalTeams - 1 && leaderboardData[index].totalGrossScore > 0) {
+      return <span className="text-2xl" title="Needs Improvement">👎</span>;
+    }
+    return null;
   };
 
   if (loading) {
@@ -162,19 +186,32 @@ export default function Leaderboard() {
       <div className="card__body">
         <div className="flex justify-between items-center mb-6">
           <h3>Team Leaderboard - {activeTour.name} {activeTour.year}</h3>
-          <div className="form-group mb-0" style={{ minWidth: '200px' }}>
-            <select
-              className="form-control"
-              value={selectedCourse}
-              onChange={(e) => setSelectedCourse(e.target.value)}
-            >
-              <option value="all">All Courses</option>
-              {courses.map(course => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-            </select>
+          <div className="flex gap-4 items-center">
+            <div className="flex items-center gap-2">
+              <label className="form-label mb-0">
+                <input
+                  type="checkbox"
+                  checked={showNet}
+                  onChange={(e) => setShowNet(e.target.checked)}
+                  className="mr-2"
+                />
+                Show Net Scores
+              </label>
+            </div>
+            <div className="form-group mb-0" style={{ minWidth: '200px' }}>
+              <select
+                className="form-control"
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+              >
+                <option value="all">All Courses</option>
+                {courses.map(course => (
+                  <option key={course.id} value={course.id}>
+                    {course.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -183,8 +220,11 @@ export default function Leaderboard() {
             <div key={team.id} className="border rounded-lg p-4">
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-4">
-                  <div className="text-2xl font-bold text-primary">
-                    #{teamIndex + 1}
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl font-bold text-primary">
+                      #{teamIndex + 1}
+                    </div>
+                    {getTeamRankIcon(teamIndex, leaderboardData.length)}
                   </div>
                   <div>
                     <h4 className="text-xl font-bold">{team.name}</h4>
@@ -195,10 +235,15 @@ export default function Leaderboard() {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold">
-                    {team.totalScore > 0 ? formatScore(team.totalScore, team.totalPar) : '-'}
+                    {team.totalGrossScore > 0 ? formatScore(
+                      team.totalGrossScore, 
+                      team.totalNetScore, 
+                      team.totalPar, 
+                      showNet
+                    ) : '-'}
                   </div>
                   <div className="text-sm text-gray-600">
-                    Team Total
+                    Team Total ({showNet ? 'Net' : 'Gross'})
                   </div>
                 </div>
               </div>
@@ -216,18 +261,21 @@ export default function Leaderboard() {
                           </th>
                         ))
                       ) : (
-                        <th className="text-center p-2">Score</th>
+                        <th className="text-center p-2">{showNet ? 'Net' : 'Gross'} Score</th>
                       )}
-                      <th className="text-center p-2 font-bold">Total</th>
+                      <th className="text-center p-2 font-bold">Total ({showNet ? 'Net' : 'Gross'})</th>
                     </tr>
                   </thead>
                   <tbody>
                     {team.members
                       .sort((a, b) => {
-                        if (a.totalScore === 0 && b.totalScore === 0) return 0;
-                        if (a.totalScore === 0) return 1;
-                        if (b.totalScore === 0) return -1;
-                        return a.totalScore - b.totalScore;
+                        const aScore = showNet ? a.totalNetScore : a.totalGrossScore;
+                        const bScore = showNet ? b.totalNetScore : b.totalGrossScore;
+                        
+                        if (aScore === 0 && bScore === 0) return 0;
+                        if (aScore === 0) return 1;
+                        if (bScore === 0) return -1;
+                        return aScore - bScore;
                       })
                       .map(member => (
                         <tr key={member.id} className="border-b">
@@ -238,20 +286,35 @@ export default function Leaderboard() {
                               const courseScore = member.scores.find(s => s.courseId === course.id);
                               return (
                                 <td key={course.id} className="p-2 text-center">
-                                  {courseScore ? formatScore(courseScore.total, courseScore.par) : '-'}
+                                  {courseScore ? formatScore(
+                                    courseScore.grossTotal, 
+                                    courseScore.netTotal, 
+                                    courseScore.par, 
+                                    showNet
+                                  ) : '-'}
                                 </td>
                               );
                             })
                           ) : (
                             <td className="p-2 text-center">
                               {member.scores.length > 0 
-                                ? formatScore(member.scores[0].total, member.scores[0].par)
+                                ? formatScore(
+                                    member.scores[0].grossTotal, 
+                                    member.scores[0].netTotal, 
+                                    member.scores[0].par, 
+                                    showNet
+                                  )
                                 : '-'
                               }
                             </td>
                           )}
                           <td className="p-2 text-center font-bold">
-                            {member.totalScore > 0 ? formatScore(member.totalScore, member.totalPar) : '-'}
+                            {member.totalGrossScore > 0 ? formatScore(
+                              member.totalGrossScore, 
+                              member.totalNetScore, 
+                              member.totalPar, 
+                              showNet
+                            ) : '-'}
                           </td>
                         </tr>
                       ))}

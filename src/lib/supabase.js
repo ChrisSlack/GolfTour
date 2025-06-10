@@ -272,6 +272,15 @@ export const db = {
     return { data, error };
   },
 
+  deleteScorecard: async (userId, courseId) => {
+    const { error } = await supabase
+      .from('scores')
+      .delete()
+      .eq('user_id', userId)
+      .eq('course_id', courseId);
+    return { error };
+  },
+
   // Fines
   getFines: async (tourId) => {
     const { data, error } = await supabase

@@ -1189,3 +1189,43 @@ main {
 .cursor-pointer {
     cursor: pointer;
 }
+
+/* Warning styles for scorecard validation */
+.bg-yellow-50 {
+    background-color: #fffbeb;
+}
+
+.border-yellow-200 {
+    border-color: #fde68a;
+}
+
+.text-yellow-800 {
+    color: #92400e;
+}
+
+/* Dark mode warning styles */
+@media (prefers-color-scheme: dark) {
+    .bg-yellow-50 {
+        background-color: rgba(251, 191, 36, 0.1);
+    }
+    
+    .border-yellow-200 {
+        border-color: rgba(251, 191, 36, 0.3);
+    }
+    
+    .text-yellow-800 {
+        color: #fbbf24;
+    }
+}
+
+[data-color-scheme="dark"] .bg-yellow-50 {
+    background-color: rgba(251, 191, 36, 0.1);
+}
+
+[data-color-scheme="dark"] .border-yellow-200 {
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+[data-color-scheme="dark"] .text-yellow-800 {
+    color: #fbbf24;
+}
