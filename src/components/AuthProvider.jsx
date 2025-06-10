@@ -114,7 +114,7 @@ export default function AuthProvider({ children }) {
       const { data, error } = await auth.signIn(email, password);
       return { data, error };
     } finally {
-      // Don't set loading to false here, let the auth state change handle it
+      setLoading(false);
     }
   };
 
@@ -124,7 +124,7 @@ export default function AuthProvider({ children }) {
       const { data, error } = await auth.signUp(email, password, userData);
       return { data, error };
     } finally {
-      // Don't set loading to false here, let the auth state change handle it
+      setLoading(false);
     }
   };
 
@@ -134,7 +134,7 @@ export default function AuthProvider({ children }) {
       const { error } = await auth.signOut();
       return { error };
     } finally {
-      // Don't set loading to false here, let the auth state change handle it
+      setLoading(false);
     }
   };
 
