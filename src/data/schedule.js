@@ -8,7 +8,7 @@ export default [
     teeTime: 'N/A',
     golfDrinksHours: 'N/A',
     pickUpTime: 'N/A',
-    link: 'N/A'
+    link: 'https://www.google.com/maps/place/Hotel+Vila+Gal%C3%A9+Cerro+Alagoa/@37.0902751,-8.2464811,1820m/data=!3m2!1e3!4b1!4m9!3m8!1s0xd1acc1ed02352b3:0x9b33e2804786b813!5m2!4m1!1i2!8m2!3d37.0902751!4d-8.2439008!16s%2Fg%2F1wb8vz6s?entry=ttu&g_ep=EgoyMDI1MDYwNC4wIKXMDSoASAFQAw%3D%3D'
   },
   {
     date: 'Wednesday July 2, 2025',
@@ -63,6 +63,6 @@ export default [
     teeTime: 'N/A',
     golfDrinksHours: 'N/A',
     pickUpTime: 'N/A',
-    link: 'N/A'
+    link: 'https://www.google.com/maps/place/Hotel+Vila+Gal%C3%A9+Cerro+Alagoa/@37.0902751,-8.2464811,1820m/data=!3m2!1e3!4b1!4m9!3m8!1s0xd1acc1ed02352b3:0x9b33e2804786b813!5m2!4m1!1i2!8m2!3d37.0902751!4d-8.2439008!16s%2Fg%2F1wb8vz6s?entry=ttu&g_ep=EgoyMDI1MDYwNC4wIKXMDSoASAFQAw%3D%3D'
   }
 ];
