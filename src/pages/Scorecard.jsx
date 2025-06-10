@@ -24,6 +24,7 @@ export default function Scorecard() {
   const [mobileView, setMobileView] = useState('overview'); // 'overview', 'hole-entry'
   const [currentHole, setCurrentHole] = useState(1);
   const [currentPlayer, setCurrentPlayer] = useState(0);
+  const [selectedScore, setSelectedScore] = useState(null); // For "Enter" button requirement
   const [showWarning, setShowWarning] = useState(false);
   const [warningMessage, setWarningMessage] = useState('');
 
@@ -174,13 +175,19 @@ export default function Scorecard() {
     });
   };
 
-  const handleMobileScoreEntry = (score) => {
-    if (selectedPlayers.length === 0) return;
+  // Mobile score selection (tap to select, tap Enter to confirm)
+  const handleMobileScoreSelect = (score) => {
+    setSelectedScore(score);
+  };
+
+  const handleMobileScoreEntry = () => {
+    if (selectedPlayers.length === 0 || selectedScore === null) return;
     
     const playerId = selectedPlayers[currentPlayer];
     const holeIndex = currentHole - 1;
     
-    handleScoreChange(playerId, holeIndex, score.toString());
+    handleScoreChange(playerId, holeIndex, selectedScore.toString());
+    setSelectedScore(null); // Clear selection after entry
     
     // Auto-advance to next player or hole
     if (currentPlayer < selectedPlayers.length - 1) {
@@ -327,6 +334,7 @@ export default function Scorecard() {
     
     setCurrentHole(holeNumber);
     setCurrentPlayer(0);
+    setSelectedScore(null); // Clear any selected score
   };
 
   const handlePlayerNavigation = (direction) => {
@@ -347,6 +355,7 @@ export default function Scorecard() {
         setCurrentPlayer(selectedPlayers.length - 1);
       }
     }
+    setSelectedScore(null); // Clear any selected score when navigating
   };
 
   const getHoleLength = (holeNumber) => {
@@ -500,8 +509,15 @@ export default function Scorecard() {
                   {getScoreLabel(parseInt(currentScore), currentHoleData.par)}
                 </span>
               </div>
+            ) : selectedScore ? (
+              <div className="current-score">
+                <span className="score-number">{selectedScore}</span>
+                <span className="score-label">
+                  {getScoreLabel(selectedScore, currentHoleData.par)} (Selected)
+                </span>
+              </div>
             ) : (
-              <span className="no-score">Tap to enter score</span>
+              <span className="no-score">Tap to select score</span>
             )}
           </div>
         </div>
@@ -527,8 +543,8 @@ export default function Scorecard() {
             return (
               <button 
                 key={scoreValue}
-                className={`mobile-score-btn ${isParScore ? 'mobile-score-btn--par' : ''} ${currentScoreNum === scoreValue ? 'mobile-score-btn--selected' : ''}`}
-                onClick={() => handleMobileScoreEntry(scoreValue)}
+                className={`mobile-score-btn ${isParScore ? 'mobile-score-btn--par' : ''} ${selectedScore === scoreValue ? 'mobile-score-btn--selected' : ''}`}
+                onClick={() => handleMobileScoreSelect(scoreValue)}
               >
                 <span className="score-number">{scoreValue}</span>
                 {label && <span className="score-label">{label}</span>}
@@ -536,6 +552,19 @@ export default function Scorecard() {
             );
           })}
         </div>
+
+        {/* Enter Button */}
+        {selectedScore && (
+          <div className="mobile-actions">
+            <button 
+              className="mobile-action-btn btn btn--primary"
+              onClick={handleMobileScoreEntry}
+            >
+              <i className="fas fa-check"></i>
+              Enter Score: {selectedScore}
+            </button>
+          </div>
+        )}
 
         {/* Additional Tracking Buttons */}
         <div className="mobile-extras">
@@ -589,7 +618,12 @@ export default function Scorecard() {
         <div className="mobile-actions">
           <button 
             className="mobile-action-btn mobile-action-btn--clear"
-            onClick={() => handleMobileScoreEntry('')}
+            onClick={() => {
+              const playerId = selectedPlayers[currentPlayer];
+              const holeIndex = currentHole - 1;
+              handleScoreChange(playerId, holeIndex, '');
+              setSelectedScore(null);
+            }}
           >
             Clear Score
           </button>
@@ -696,6 +730,7 @@ export default function Scorecard() {
               onClick={() => {
                 setCurrentHole(1);
                 setCurrentPlayer(0);
+                setSelectedScore(null);
                 setMobileView('hole-entry');
               }}
             >
@@ -720,6 +755,50 @@ export default function Scorecard() {
                 {saving ? 'Saving...' : 'Save Scores'}
               </button>
             </div>
+
+            {/* Mobile Full Scorecard Display */}
+            {selectedPlayers.length > 0 && (
+              <div className="mt-8">
+                <h4 className="mb-4">Full Scorecard</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border">
+                    <thead>
+                      <tr className="bg-gray-100">
+                        <th className="p-2 border text-left">Player</th>
+                        {Array.from({ length: 18 }, (_, i) => (
+                          <th key={i} className="p-1 border text-center min-w-8">{i + 1}</th>
+                        ))}
+                        <th className="p-2 border text-center">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedPlayers.map(playerId => {
+                        const player = users.find(u => u.id === playerId);
+                        const playerScores = scores[playerId] || Array(18).fill('');
+                        const total = calculateTotal(playerId, 0, 18);
+                        
+                        return (
+                          <tr key={playerId} className="border-b">
+                            <td className="p-2 border font-medium">
+                              <div>{player?.name} {player?.surname}</div>
+                              <div className="text-xs text-gray-600">HCP: {player?.handicap}</div>
+                            </td>
+                            {playerScores.map((score, holeIndex) => (
+                              <td key={holeIndex} className="p-1 border text-center">
+                                {score || '-'}
+                              </td>
+                            ))}
+                            <td className="p-2 border text-center font-bold">
+                              {total || '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
