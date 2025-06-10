@@ -14,6 +14,7 @@ export default function Scorecard() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showNet, setShowNet] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -24,6 +25,28 @@ export default function Scorecard() {
       loadScores();
     }
   }, [selectedCourse, selectedPlayers]);
+
+  // Calculate net score for a hole based on handicap allocation
+  const calculateNetScore = (grossScore, holeStrokeIndex, courseHandicap) => {
+    let handicapStrokes = 0;
+    
+    // Allocate handicap strokes based on stroke index
+    if (courseHandicap >= holeStrokeIndex) {
+      handicapStrokes = 1;
+    }
+    
+    // If handicap > 18, allocate second strokes
+    if (courseHandicap > 18 && holeStrokeIndex <= (courseHandicap - 18)) {
+      handicapStrokes = 2;
+    }
+    
+    return Math.max(1, grossScore - handicapStrokes);
+  };
+
+  // Calculate course handicap (simplified)
+  const calculateCourseHandicap = (handicapIndex) => {
+    return Math.round(handicapIndex);
+  };
 
   const loadData = async () => {
     try {
@@ -156,13 +179,23 @@ export default function Scorecard() {
     }
   };
 
-  const calculateTotal = (playerId, startHole, endHole) => {
+  const calculateTotal = (playerId, startHole, endHole, useNet = false) => {
     const playerScores = scores[playerId] || [];
+    const player = users.find(u => u.id === playerId);
+    const courseHandicap = player ? calculateCourseHandicap(player.handicap) : 0;
+    const holeData = getHoleData();
+    
     let total = 0;
     for (let i = startHole; i < endHole; i++) {
-      const score = parseInt(playerScores[i], 10);
-      if (!isNaN(score)) {
-        total += score;
+      const grossScore = parseInt(playerScores[i], 10);
+      if (!isNaN(grossScore)) {
+        if (useNet && holeData[i]) {
+          const strokeIndex = holeData[i].hcp || (i + 1);
+          const netScore = calculateNetScore(grossScore, strokeIndex, courseHandicap);
+          total += netScore;
+        } else {
+          total += grossScore;
+        }
       }
     }
     return total || '';
@@ -262,7 +295,20 @@ export default function Scorecard() {
         <div className="card mt-8">
           <div className="card__body">
             <div className="flex justify-between items-center mb-4">
-              <h3>{selectedCourse.name}</h3>
+              <div className="flex items-center gap-4">
+                <h3>{selectedCourse.name}</h3>
+                <div className="flex items-center gap-2">
+                  <label className="form-label mb-0">
+                    <input
+                      type="checkbox"
+                      checked={showNet}
+                      onChange={(e) => setShowNet(e.target.checked)}
+                      className="mr-2"
+                    />
+                    Show Net Scores
+                  </label>
+                </div>
+              </div>
               <div className="flex gap-4">
                 <button
                   className="btn btn--secondary"
@@ -283,7 +329,8 @@ export default function Scorecard() {
 
             <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800">
-                <strong>Scoring Rules:</strong> Scores must be between 1 and 12 strokes per hole.
+                <strong>Scoring Rules:</strong> Scores must be between 1 and 12 strokes per hole.<br/>
+                <strong>Net Scoring:</strong> Net scores are calculated by subtracting handicap strokes allocated based on each hole's stroke index (difficulty ranking).
               </p>
             </div>
 
@@ -321,29 +368,48 @@ export default function Scorecard() {
                 <tbody>
                   {selectedPlayers.map(playerId => {
                     const player = users.find(u => u.id === playerId);
-                    const out = calculateTotal(playerId, 0, 9);
-                    const inn = calculateTotal(playerId, 9, 18);
+                    const out = calculateTotal(playerId, 0, 9, showNet);
+                    const inn = calculateTotal(playerId, 9, 18, showNet);
                     const total = out && inn ? out + inn : '';
 
                     return (
                       <tr key={playerId}>
                         <td className="font-medium">
                           {player?.name} {player?.surname}
+                          {showNet && <span className="text-sm text-gray-600"> (HCP: {player?.handicap})</span>}
                         </td>
                         {Array.from({ length: 18 }, (_, holeIndex) => {
                           const playerScores = scores[playerId] || [];
-                          const value = playerScores[holeIndex] || '';
-                          const par = holeData[holeIndex]?.par || 4;
-                          const score = parseInt(value, 10);
+                          const grossValue = playerScores[holeIndex] || '';
+                          const grossScore = parseInt(grossValue, 10);
                           
+                          let displayValue = grossValue;
                           let className = 'score-par';
-                          if (!isNaN(score)) {
-                            const diff = score - par;
-                            if (diff <= -2) className = 'score-eagle';
-                            else if (diff === -1) className = 'score-birdie';
-                            else if (diff === 0) className = 'score-par';
-                            else if (diff === 1) className = 'score-bogey';
-                            else if (diff >= 2) className = 'score-double';
+                          
+                          if (!isNaN(grossScore)) {
+                            const holeInfo = holeData[holeIndex];
+                            const par = holeInfo?.par || 4;
+                            
+                            if (showNet && player) {
+                              const courseHandicap = calculateCourseHandicap(player.handicap);
+                              const strokeIndex = holeInfo?.hcp || (holeIndex + 1);
+                              const netScore = calculateNetScore(grossScore, strokeIndex, courseHandicap);
+                              displayValue = netScore.toString();
+                              
+                              const diff = netScore - par;
+                              if (diff <= -2) className = 'score-eagle';
+                              else if (diff === -1) className = 'score-birdie';
+                              else if (diff === 0) className = 'score-par';
+                              else if (diff === 1) className = 'score-bogey';
+                              else if (diff >= 2) className = 'score-double';
+                            } else {
+                              const diff = grossScore - par;
+                              if (diff <= -2) className = 'score-eagle';
+                              else if (diff === -1) className = 'score-birdie';
+                              else if (diff === 0) className = 'score-par';
+                              else if (diff === 1) className = 'score-bogey';
+                              else if (diff >= 2) className = 'score-double';
+                            }
                           }
 
                           return (
@@ -351,13 +417,18 @@ export default function Scorecard() {
                               <input
                                 type="number"
                                 className="form-control"
-                                value={value}
+                                value={grossValue}
                                 onChange={(e) => handleScoreChange(playerId, holeIndex, e.target.value)}
                                 style={{ width: '4rem', textAlign: 'center' }}
                                 min="1"
                                 max="12"
                                 placeholder="1-12"
                               />
+                              {showNet && !isNaN(grossScore) && grossValue !== displayValue && (
+                                <div className="text-xs text-gray-600 mt-1">
+                                  Net: {displayValue}
+                                </div>
+                              )}
                             </td>
                           );
                         })}

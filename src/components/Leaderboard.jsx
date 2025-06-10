@@ -13,6 +13,31 @@ export default function Leaderboard() {
     loadLeaderboardData();
   }, [selectedCourse, showNet]);
 
+  // Calculate net score for a hole based on handicap allocation
+  const calculateNetScore = (grossScore, holeStrokeIndex, courseHandicap) => {
+    let handicapStrokes = 0;
+    
+    // Allocate handicap strokes based on stroke index
+    if (courseHandicap >= holeStrokeIndex) {
+      handicapStrokes = 1;
+    }
+    
+    // If handicap > 18, allocate second strokes
+    if (courseHandicap > 18 && holeStrokeIndex <= (courseHandicap - 18)) {
+      handicapStrokes = 2;
+    }
+    
+    return Math.max(1, grossScore - handicapStrokes);
+  };
+
+  // Calculate course handicap (simplified - using handicap index directly for now)
+  const calculateCourseHandicap = (handicapIndex) => {
+    // Simplified calculation - in reality this would use slope rating and course rating
+    // Course Handicap = Handicap Index × (Slope Rating ÷ 113) + (Course Rating – Par)
+    // For now, we'll use the handicap index directly, rounded to nearest whole number
+    return Math.round(handicapIndex);
+  };
+
   const loadLeaderboardData = async () => {
     try {
       setLoading(true);
@@ -71,16 +96,36 @@ export default function Leaderboard() {
             coursesPlayed: 0
           };
 
+          // Calculate course handicap for this player
+          const courseHandicap = calculateCourseHandicap(member.user.handicap);
+
           // Get scores for each course
           for (const course of coursesToQuery) {
             const { data: scoresData } = await db.getScores(course.id, member.user.id);
             
             if (scoresData && scoresData.length > 0) {
-              const courseGrossTotal = scoresData.reduce((sum, score) => sum + score.strokes, 0);
               const coursePar = course.par || 72;
               
-              // Calculate net score (gross - handicap, but not below par)
-              const courseNetTotal = Math.max(courseGrossTotal - member.user.handicap, coursePar);
+              // Calculate gross total
+              const courseGrossTotal = scoresData.reduce((sum, score) => sum + score.strokes, 0);
+              
+              // Calculate net total by applying handicap to each hole
+              let courseNetTotal = 0;
+              
+              // Get hole data for stroke indexes
+              const holeData = course.holes || [];
+              
+              // Sort scores by hole number to ensure proper order
+              const sortedScores = [...scoresData].sort((a, b) => a.hole_number - b.hole_number);
+              
+              for (const score of sortedScores) {
+                const holeIndex = score.hole_number - 1;
+                const holeInfo = holeData[holeIndex];
+                const strokeIndex = holeInfo?.hcp || score.hole_number; // Fallback to hole number if no stroke index
+                
+                const netScore = calculateNetScore(score.strokes, strokeIndex, courseHandicap);
+                courseNetTotal += netScore;
+              }
               
               memberData.scores.push({
                 courseId: course.id,
@@ -213,6 +258,15 @@ export default function Leaderboard() {
               </select>
             </div>
           </div>
+        </div>
+
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded">
+          <p className="text-sm text-yellow-800">
+            <strong>Scoring Explanation:</strong><br/>
+            • <strong>Gross Score:</strong> Total strokes taken<br/>
+            • <strong>Net Score:</strong> Gross score minus handicap strokes allocated per hole based on stroke index<br/>
+            • Handicap strokes are allocated to holes based on their difficulty ranking (stroke index 1-18)
+          </p>
         </div>
 
         <div className="space-y-6">
