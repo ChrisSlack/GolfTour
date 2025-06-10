@@ -17,6 +17,12 @@ This project provides a simple React application for organising the Portugal Gol
    npm run build
    ```
 
+## Scorecard Functionality
+
+The site includes an interactive scorecard system. Navigate to **Scorecard** from
+the main menu to add players and record hole-by-hole scores for each course. Scores
+are stored in your browser so progress is kept between visits.
+
 ## Improvement Suggestions
 
 Here are some ideas for future enhancements:

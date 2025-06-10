@@ -5,6 +5,7 @@ import Schedule from './pages/Schedule';
 import Courses from './pages/Courses';
 import Fines from './pages/Fines';
 import Friday from './pages/Friday';
+import Scorecard from './pages/Scorecard';
 
 export default function App() {
   const [page, setPage] = useState('home');
@@ -22,6 +23,9 @@ export default function App() {
       break;
     case 'friday':
       content = <Friday />;
+      break;
+    case 'scorecard':
+      content = <Scorecard />;
       break;
     default:
       content = <Home />;
