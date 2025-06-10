@@ -11,8 +11,14 @@ export default function Schedule() {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Course/Activity</th>
+                <th>Golf Course</th>
+                <th>Departure Time</th>
+                <th>Travel Time (mins)</th>
+                <th>Pre-Tee Off Time (hrs)</th>
                 <th>Tee Time</th>
+                <th>Golf &amp; Drinks (hrs)</th>
+                <th>Pick Up Time</th>
+                <th>Link to Golf Course</th>
               </tr>
             </thead>
             <tbody>
@@ -20,7 +26,21 @@ export default function Schedule() {
                 <tr key={day.date}>
                   <td>{day.date}</td>
                   <td>{day.course}</td>
+                  <td>{day.departureTime}</td>
+                  <td>{day.travelTime}</td>
+                  <td>{day.preTeeOffTime}</td>
                   <td>{day.teeTime}</td>
+                  <td>{day.golfDrinksHours}</td>
+                  <td>{day.pickUpTime}</td>
+                  <td>
+                    {day.link !== 'N/A' ? (
+                      <a href={day.link} target="_blank" rel="noopener noreferrer">
+                        {day.course}
+                      </a>
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
