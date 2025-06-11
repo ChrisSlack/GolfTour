@@ -64,13 +64,16 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
     // Close mobile menu immediately
     setIsMobileMenuOpen(false);
     
-    // Call the navigation function
-    if (onNavigate && typeof onNavigate === 'function') {
-      onNavigate(linkId);
-    }
-    
-    // Also update the URL hash as fallback
-    window.location.hash = linkId;
+    // Small delay to ensure menu closes before navigation
+    setTimeout(() => {
+      // Call the navigation function
+      if (onNavigate && typeof onNavigate === 'function') {
+        onNavigate(linkId);
+      }
+      
+      // Also update the URL hash as fallback
+      window.location.hash = linkId;
+    }, 100);
   };
 
   const toggleMobileMenu = () => {
@@ -125,13 +128,21 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
               <ul className="nav-list">
                 {links.map(link => (
                   <li key={link.id}>
-                    <a
-                      href={`#${link.id}`}
+                    {/* Use button instead of anchor for better mobile interaction */}
+                    <button
+                      type="button"
                       onClick={(e) => handleNavClick(link.id, e)}
                       className={`nav-link${current === link.id ? ' active' : ''}`}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        width: '100%',
+                        textAlign: isMobile ? 'center' : 'left'
+                      }}
                     >
                       {link.label}
-                    </a>
+                    </button>
                   </li>
                 ))}
                 <li className="auth-section">

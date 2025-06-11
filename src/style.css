@@ -811,6 +811,10 @@ main {
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    cursor: pointer;
+    /* Remove any inherited styles that might interfere */
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Mobile navigation link hover states - BRIGHT FEEDBACK */
