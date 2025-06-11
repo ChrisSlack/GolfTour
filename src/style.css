@@ -764,107 +764,100 @@ main {
     display: flex;
 }
 
-/* Mobile navigation - CRITICAL FIXES */
+/* Mobile navigation - STREAMLINED APPROACH */
 .mobile-nav {
     display: none;
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background-color: var(--color-surface) !important;
-    z-index: 1000 !important;
-    transform: translateX(-100%) !important;
-    transition: transform 0.3s ease-in-out !important;
-    overflow-y: auto !important;
-    padding-top: 80px !important; /* Account for header height */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--color-surface);
+    z-index: 1000;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    overflow-y: auto;
+    padding-top: 80px; /* Account for header height */
 }
 
 .mobile-nav--open {
-    transform: translateX(0) !important;
+    display: block;
+    transform: translateX(0);
 }
 
-/* Mobile navigation list - FORCE VISIBILITY */
+/* Mobile navigation list */
 .mobile-nav .nav-list {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    padding: var(--space-24) !important;
-    gap: 0 !important;
-    width: 100% !important;
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-24);
+    gap: 0;
+    width: 100%;
 }
 
-/* Mobile navigation links - FORCE FULL VISIBILITY */
+/* Mobile navigation links */
 .mobile-nav .nav-link {
-    display: block !important;
-    padding: var(--space-16) var(--space-24) !important;
-    margin-bottom: var(--space-8) !important;
-    text-align: center !important;
-    font-size: var(--font-size-lg) !important;
-    font-weight: var(--font-weight-medium) !important;
-    border: 2px solid var(--color-border) !important;
-    border-radius: var(--radius-base) !important;
-    background-color: var(--color-surface) !important;
-    color: var(--color-text) !important;
-    text-decoration: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    min-height: 56px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: all 0.2s ease !important;
+    display: flex;
+    padding: var(--space-16) var(--space-24);
+    margin-bottom: var(--space-8);
+    text-align: center;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-base);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    text-decoration: none;
+    min-height: 56px;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
 }
 
-/* Mobile navigation link hover states - FORCE VISIBILITY */
+/* Mobile navigation link hover states */
 .mobile-nav .nav-link:hover {
-    background-color: var(--color-secondary-hover) !important;
-    color: var(--color-text) !important;
-    transform: scale(1.02) !important;
-    border-color: var(--color-primary) !important;
+    background-color: var(--color-secondary-hover);
+    color: var(--color-text);
+    transform: scale(1.02);
+    border-color: var(--color-primary);
 }
 
-/* Mobile navigation active link - FORCE VISIBILITY */
+/* Mobile navigation active link */
 .mobile-nav .nav-link.active {
-    background-color: var(--color-primary) !important;
-    color: var(--color-btn-primary-text) !important;
-    border-color: var(--color-primary) !important;
-    font-weight: var(--font-weight-bold) !important;
+    background-color: var(--color-primary);
+    color: var(--color-btn-primary-text);
+    border-color: var(--color-primary);
+    font-weight: var(--font-weight-bold);
 }
 
-/* Mobile auth section - FORCE VISIBILITY */
+/* Mobile auth section */
 .mobile-nav .auth-section {
-    margin-left: 0 !important;
-    margin-top: var(--space-24) !important;
-    padding-top: var(--space-24) !important;
-    border-top: 2px solid var(--color-border) !important;
-    text-align: center !important;
-    width: 100% !important;
+    margin-left: 0;
+    margin-top: var(--space-24);
+    padding-top: var(--space-24);
+    border-top: 2px solid var(--color-border);
+    text-align: center;
+    width: 100%;
 }
 
-/* Mobile user menu - FORCE VISIBILITY */
+/* Mobile user menu */
 .mobile-nav .user-menu {
-    flex-direction: column !important;
-    gap: var(--space-16) !important;
-    width: 100% !important;
+    flex-direction: column;
+    gap: var(--space-16);
+    width: 100%;
 }
 
-/* Mobile user greeting - FORCE VISIBILITY */
+/* Mobile user greeting */
 .mobile-nav .user-greeting {
-    font-size: var(--font-size-lg) !important;
-    color: var(--color-text) !important;
-    font-weight: var(--font-weight-medium) !important;
-    opacity: 1 !important;
+    font-size: var(--font-size-lg);
+    color: var(--color-text);
+    font-weight: var(--font-weight-medium);
 }
 
-/* Mobile buttons - FORCE VISIBILITY */
+/* Mobile buttons */
 .mobile-nav .btn {
-    width: 100% !important;
-    padding: var(--space-16) var(--space-24) !important;
-    font-size: var(--font-size-lg) !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
+    width: 100%;
+    padding: var(--space-16) var(--space-24);
+    font-size: var(--font-size-lg);
 }
 
 /* Mobile menu overlay */
@@ -892,45 +885,35 @@ main {
         font-size: var(--font-size-lg);
     }
 
-    /* FORCE mobile menu button to show */
+    /* Show mobile menu button */
     .mobile-menu-btn {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* FORCE desktop nav to hide */
+    /* Hide desktop nav */
     .desktop-nav {
-        display: none !important;
+        display: none;
     }
 
-    /* FORCE mobile nav to show when needed */
+    /* Enable mobile nav */
     .mobile-nav {
-        display: block !important;
+        display: block;
     }
 }
 
 /* Force mobile layout for devices with mobile user agents */
 .mobile-device .mobile-menu-btn {
-    display: flex !important;
+    display: flex;
 }
 
 .mobile-device .desktop-nav {
-    display: none !important;
+    display: none;
 }
 
 .mobile-device .mobile-nav {
-    display: block !important;
-}
-
-/* Additional mobile-specific overrides */
-.mobile-device .mobile-nav .nav-link,
-.mobile-device .mobile-nav .btn,
-.mobile-device .mobile-nav .user-greeting {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    color: var(--color-text) !important;
+    display: block;
 }
 
 /* Page Navigation */
