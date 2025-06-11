@@ -764,7 +764,7 @@ main {
     display: flex;
 }
 
-/* Mobile navigation - COMPLETELY REWRITTEN */
+/* Mobile navigation - WORKING VERSION */
 .mobile-nav {
     display: none;
     position: fixed;
@@ -785,7 +785,7 @@ main {
     transform: translateX(0);
 }
 
-/* Mobile navigation list - CLEAN APPROACH */
+/* Mobile navigation list */
 .mobile-nav .nav-list {
     flex-direction: column;
     align-items: stretch;
@@ -794,7 +794,7 @@ main {
     width: 100%;
 }
 
-/* Mobile navigation links - BRIGHT AND VISIBLE */
+/* Mobile navigation links - BRIGHT AND CLICKABLE */
 .mobile-nav .nav-link {
     display: flex;
     padding: var(--space-16) var(--space-24);
@@ -812,12 +812,11 @@ main {
     justify-content: center;
     transition: all 0.2s ease;
     cursor: pointer;
-    /* Remove any inherited styles that might interfere */
     width: 100%;
     box-sizing: border-box;
 }
 
-/* Mobile navigation link hover states - BRIGHT FEEDBACK */
+/* Mobile navigation link hover states */
 .mobile-nav .nav-link:hover {
     background-color: var(--color-primary-hover);
     color: var(--color-btn-primary-text);
@@ -825,7 +824,7 @@ main {
     border-color: var(--color-primary-hover);
 }
 
-/* Mobile navigation active link - DISTINCT STYLING */
+/* Mobile navigation active link */
 .mobile-nav .nav-link.active {
     background-color: var(--color-success);
     color: var(--color-btn-primary-text);
@@ -833,7 +832,7 @@ main {
     font-weight: var(--font-weight-bold);
 }
 
-/* Mobile auth section - PROMINENT PLACEMENT */
+/* Mobile auth section */
 .mobile-nav .auth-section {
     margin-left: 0;
     margin-top: var(--space-24);
@@ -843,14 +842,14 @@ main {
     width: 100%;
 }
 
-/* Mobile user menu - CLEAR LAYOUT */
+/* Mobile user menu */
 .mobile-nav .user-menu {
     flex-direction: column;
     gap: var(--space-16);
     width: 100%;
 }
 
-/* Mobile user greeting - VISIBLE TEXT */
+/* Mobile user greeting */
 .mobile-nav .user-greeting {
     font-size: var(--font-size-lg);
     color: var(--color-text);
@@ -860,7 +859,7 @@ main {
     border-radius: var(--radius-base);
 }
 
-/* Mobile buttons - PROMINENT AND CLICKABLE */
+/* Mobile buttons */
 .mobile-nav .btn {
     width: 100%;
     padding: var(--space-16) var(--space-24);

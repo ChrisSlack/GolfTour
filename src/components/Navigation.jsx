@@ -128,21 +128,14 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
               <ul className="nav-list">
                 {links.map(link => (
                   <li key={link.id}>
-                    {/* Use button instead of anchor for better mobile interaction */}
-                    <button
-                      type="button"
+                    {/* Use anchor tags for better accessibility and SEO */}
+                    <a
+                      href={`#${link.id}`}
                       onClick={(e) => handleNavClick(link.id, e)}
                       className={`nav-link${current === link.id ? ' active' : ''}`}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        width: '100%',
-                        textAlign: isMobile ? 'center' : 'left'
-                      }}
                     >
                       {link.label}
-                    </button>
+                    </a>
                   </li>
                 ))}
                 <li className="auth-section">
