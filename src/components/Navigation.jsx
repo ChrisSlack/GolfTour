@@ -52,9 +52,25 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
     setIsMobileMenuOpen(false); // Close menu after sign out
   };
 
-  const handleNavClick = (linkId) => {
-    onNavigate && onNavigate(linkId);
-    setIsMobileMenuOpen(false); // Close mobile menu when navigating
+  const handleNavClick = (linkId, event) => {
+    // Prevent default link behavior
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    
+    console.log('Navigation clicked:', linkId); // Debug log
+    
+    // Close mobile menu immediately
+    setIsMobileMenuOpen(false);
+    
+    // Call the navigation function
+    if (onNavigate && typeof onNavigate === 'function') {
+      onNavigate(linkId);
+    }
+    
+    // Also update the URL hash as fallback
+    window.location.hash = linkId;
   };
 
   const toggleMobileMenu = () => {
@@ -109,16 +125,32 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
               <ul className="nav-list">
                 {links.map(link => (
                   <li key={link.id}>
-                    <a
-                      href={`#${link.id}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleNavClick(link.id);
-                      }}
-                      className={`nav-link${current === link.id ? ' active' : ''}`}
-                    >
-                      {link.label}
-                    </a>
+                    {isMobile ? (
+                      // Mobile: Use button for better touch handling
+                      <button
+                        type="button"
+                        onClick={(e) => handleNavClick(link.id, e)}
+                        className={`nav-link${current === link.id ? ' active' : ''}`}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          width: '100%',
+                          textAlign: 'center',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {link.label}
+                      </button>
+                    ) : (
+                      // Desktop: Use anchor tag
+                      <a
+                        href={`#${link.id}`}
+                        onClick={(e) => handleNavClick(link.id, e)}
+                        className={`nav-link${current === link.id ? ' active' : ''}`}
+                      >
+                        {link.label}
+                      </a>
+                    )}
                   </li>
                 ))}
                 <li className="auth-section">
