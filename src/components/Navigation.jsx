@@ -53,24 +53,26 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
   };
 
   const handleNavClick = (linkId, event) => {
-    // Don't block the default anchor behaviour. Letting the browser
-    // handle the navigation ensures taps work correctly on mobile.
+    // Prevent the default anchor behaviour so the SPA can control navigation.
     if (event) {
-      // Intentionally not calling preventDefault or stopPropagation
+      event.preventDefault();
+      event.stopPropagation();
     }
-    
+
     console.log('Navigation clicked:', linkId); // Debug log
-    
+
     // Close mobile menu immediately
     setIsMobileMenuOpen(false);
-    
-    // Call the navigation function immediately
-    if (onNavigate && typeof onNavigate === 'function') {
-      onNavigate(linkId);
-    }
-    
-    // Also update the URL hash as fallback
-    window.location.hash = linkId;
+
+    // Navigate after a short delay to ensure the menu has closed
+    setTimeout(() => {
+      if (onNavigate && typeof onNavigate === 'function') {
+        onNavigate(linkId);
+      }
+
+      // Update the URL hash as a fallback
+      window.location.hash = linkId;
+    }, 100);
   };
 
   const toggleMobileMenu = () => {
