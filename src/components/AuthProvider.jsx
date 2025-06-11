@@ -120,10 +120,10 @@ export default function AuthProvider({ children }) {
   const loadUserProfile = async (userId, userMetadata = {}) => {
     console.log('📋 Loading user profile for:', userId);
     try {
-      // Increase timeout to 20 seconds for database operations
+      // Increase timeout to 30 seconds for database operations
       const { data, error } = await withTimeout(
         db.getUserById(userId),
-        20000,
+        30000,
         'getUserById'
       );
       
@@ -150,7 +150,7 @@ export default function AuthProvider({ children }) {
         console.log('📝 Creating profile with data:', userData);
         const { data: newProfile, error: createError } = await withTimeout(
           db.createUserProfile(userId, userData),
-          20000,
+          30000,
           'createUserProfile'
         );
         
@@ -236,7 +236,7 @@ export default function AuthProvider({ children }) {
     try {
       const { data, error } = await withTimeout(
         db.updateUser(user.id, updates),
-        20000,
+        30000,
         'updateUser'
       );
       if (!error && data) {
@@ -255,7 +255,7 @@ export default function AuthProvider({ children }) {
     try {
       const { data, error } = await withTimeout(
         db.promoteToAdmin(email),
-        20000,
+        30000,
         'promoteToAdmin'
       );
       if (!error && user) {
