@@ -53,10 +53,10 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
   };
 
   const handleNavClick = (linkId, event) => {
-    // Prevent default link behavior
+    // Don't block the default anchor behaviour. Letting the browser
+    // handle the navigation ensures taps work correctly on mobile.
     if (event) {
-      event.preventDefault();
-      event.stopPropagation();
+      // Intentionally not calling preventDefault or stopPropagation
     }
     
     console.log('Navigation clicked:', linkId); // Debug log
