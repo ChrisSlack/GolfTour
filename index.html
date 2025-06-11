@@ -2,12 +2,169 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Portugal Golf Trip 2025</title>
+  
+  <!-- Prevent zoom on input focus (iOS) -->
+  <meta name="format-detection" content="telephone=no" />
+  
+  <!-- PWA and mobile optimizations -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Golf Trip 2025" />
+  
+  <!-- Prevent pull-to-refresh -->
+  <meta name="overscroll-behavior" content="none" />
+  
+  <!-- Theme colors -->
+  <meta name="theme-color" content="#21808d" />
+  <meta name="msapplication-navbutton-color" content="#21808d" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" />
+  <link rel="preload" href="https://r2cdn.perplexity.ai/fonts/FKGroteskNeue.woff2" as="font" type="font/woff2" crossorigin />
+  
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Prevent FOUC -->
+  <style>
+    html {
+      visibility: hidden;
+      opacity: 0;
+    }
+    
+    html.loaded {
+      visibility: visible;
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out;
+    }
+    
+    /* Critical CSS for mobile optimization */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+      touch-action: manipulation;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+    
+    /* Prevent zoom on double tap */
+    * {
+      touch-action: manipulation;
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 40px;
+      height: 40px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #21808d;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      z-index: 9999;
+    }
+    
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
+  <!-- Loading spinner -->
+  <div class="loading-spinner" id="loading-spinner"></div>
+  
   <div id="root"></div>
+  
+  <script>
+    // Mobile detection and optimization
+    (function() {
+      // Detect mobile device
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()) ||
+                      (window.innerWidth <= 768 && 'ontouchstart' in window);
+      
+      if (isMobile) {
+        document.body.classList.add('mobile-device');
+        
+        // Prevent zoom on input focus
+        const addMaximumScaleToMetaViewport = () => {
+          const el = document.querySelector('meta[name=viewport]');
+          if (el !== null) {
+            let content = el.getAttribute('content');
+            let re = /maximum\-scale=[0-9\.]+/g;
+            if (re.test(content)) {
+              content = content.replace(re, 'maximum-scale=1.0');
+            } else {
+              content = [content, 'maximum-scale=1.0'].join(', ');
+            }
+            el.setAttribute('content', content);
+          }
+        };
+        
+        addMaximumScaleToMetaViewport();
+        
+        // Prevent pull-to-refresh
+        let startY = 0;
+        document.addEventListener('touchstart', function(e) {
+          startY = e.touches[0].pageY;
+        }, { passive: true });
+        
+        document.addEventListener('touchmove', function(e) {
+          const y = e.touches[0].pageY;
+          if (startY <= 10 && y > startY && window.pageYOffset === 0) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        // Improve scrolling performance
+        document.addEventListener('touchmove', function(e) {
+          if (e.scale !== 1) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+        
+        // Handle orientation change
+        window.addEventListener('orientationchange', function() {
+          setTimeout(function() {
+            window.scrollTo(0, 0);
+          }, 100);
+        });
+      }
+      
+      // Remove loading spinner and show content when loaded
+      window.addEventListener('load', function() {
+        const spinner = document.getElementById('loading-spinner');
+        if (spinner) {
+          spinner.style.display = 'none';
+        }
+        document.documentElement.classList.add('loaded');
+      });
+      
+      // Fallback to remove spinner after 3 seconds
+      setTimeout(function() {
+        const spinner = document.getElementById('loading-spinner');
+        if (spinner) {
+          spinner.style.display = 'none';
+        }
+        document.documentElement.classList.add('loaded');
+      }, 3000);
+    })();
+  </script>
+  
   <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>

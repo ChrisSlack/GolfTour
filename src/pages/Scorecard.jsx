@@ -29,17 +29,37 @@ export default function Scorecard() {
   const [warningMessage, setWarningMessage] = useState('');
   const [editMode, setEditMode] = useState(false); // For edit button requirement
 
+  // Enhanced mobile detection
   useEffect(() => {
-    // Check if mobile
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      const isSmallScreen = window.innerWidth <= 768;
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      
+      // Consider it mobile if any of these conditions are true
+      const mobile = isMobileDevice || (isSmallScreen && isTouchDevice) || isSmallScreen;
+      setIsMobile(mobile);
+      
+      // Auto-switch to mobile view if mobile device and course/players selected
+      if (mobile && selectedCourse && selectedPlayers.length > 0 && mobileView === 'overview') {
+        setMobileView('hole-entry');
+        setCurrentHole(1);
+        setCurrentPlayer(0);
+        setSelectedScore(null);
+        setEditMode(false);
+      }
     };
     
     checkMobile();
     window.addEventListener('resize', checkMobile);
+    window.addEventListener('orientationchange', checkMobile);
     
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('orientationchange', checkMobile);
+    };
+  }, [selectedCourse, selectedPlayers, mobileView]);
 
   useEffect(() => {
     loadData();
@@ -50,6 +70,20 @@ export default function Scorecard() {
       loadScores();
     }
   }, [selectedCourse, selectedPlayers]);
+
+  // Auto-switch to mobile view when course and players are selected on mobile
+  useEffect(() => {
+    if (isMobile && selectedCourse && selectedPlayers.length > 0 && mobileView === 'overview') {
+      // Small delay to ensure smooth transition
+      setTimeout(() => {
+        setMobileView('hole-entry');
+        setCurrentHole(1);
+        setCurrentPlayer(0);
+        setSelectedScore(null);
+        setEditMode(false);
+      }, 100);
+    }
+  }, [isMobile, selectedCourse, selectedPlayers]);
 
   // Calculate course handicap using USGA formula
   const calculateCourseHandicap = (handicapIndex, courseKey) => {
@@ -761,10 +795,11 @@ export default function Scorecard() {
         </div>
       </div>
 
-      {/* Mobile Entry Button */}
-      {isMobile && selectedCourse && selectedPlayers.length > 0 && (
+      {/* Mobile Entry Button - Only show if not auto-switched */}
+      {isMobile && selectedCourse && selectedPlayers.length > 0 && mobileView === 'overview' && (
         <div className="card mt-8">
           <div className="card__body text-center">
+            <p className="mb-4 text-lg">Ready to start scoring!</p>
             <button
               className="btn btn--primary btn--lg btn--full-width mobile-start-btn"
               onClick={() => {
@@ -776,7 +811,7 @@ export default function Scorecard() {
               }}
             >
               <i className="fas fa-golf-ball"></i>
-              <span>Start Scoring</span>
+              <span>Start Mobile Scoring</span>
             </button>
             
             {/* Mobile Save/Delete Actions */}
