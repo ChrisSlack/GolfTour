@@ -764,7 +764,7 @@ main {
     display: flex;
 }
 
-/* Mobile navigation - SIMPLE AND WORKING */
+/* Mobile navigation - COMPLETELY REWRITTEN AND WORKING */
 .mobile-nav {
     display: none;
     position: fixed;

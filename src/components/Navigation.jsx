@@ -64,16 +64,13 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
     // Close mobile menu immediately
     setIsMobileMenuOpen(false);
     
-    // Small delay to ensure menu closes before navigation
-    setTimeout(() => {
-      // Call the navigation function
-      if (onNavigate && typeof onNavigate === 'function') {
-        onNavigate(linkId);
-      }
-      
-      // Also update the URL hash as fallback
-      window.location.hash = linkId;
-    }, 100);
+    // Call the navigation function immediately
+    if (onNavigate && typeof onNavigate === 'function') {
+      onNavigate(linkId);
+    }
+    
+    // Also update the URL hash as fallback
+    window.location.hash = linkId;
   };
 
   const toggleMobileMenu = () => {
