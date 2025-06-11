@@ -113,7 +113,7 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
             </div>
             
             {/* Mobile menu button */}
-            <button 
+            <button
               className="mobile-menu-btn"
               onClick={toggleMobileMenu}
               aria-label="Toggle navigation menu"
@@ -121,6 +121,27 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
             >
               <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
             </button>
+
+            {/* Mobile auth button */}
+            {isMobile && (
+              <div className="mobile-auth-btn">
+                {user ? (
+                  <button
+                    onClick={handleSignOut}
+                    className="btn btn--secondary btn--sm"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onAuthClick()}
+                    className="btn btn--primary btn--sm"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Desktop navigation */}
             <nav className={`main-nav ${isMobile ? 'mobile-nav' : 'desktop-nav'} ${isMobile && isMobileMenuOpen ? 'mobile-nav--open' : ''}`}>
