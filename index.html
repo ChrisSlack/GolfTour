@@ -117,25 +117,32 @@
         
         addMaximumScaleToMetaViewport();
         
-        // Prevent pull-to-refresh
-        let startY = 0;
-        document.addEventListener('touchstart', function(e) {
-          startY = e.touches[0].pageY;
-        }, { passive: true });
-        
-        document.addEventListener('touchmove', function(e) {
-          const y = e.touches[0].pageY;
-          if (startY <= 10 && y > startY && window.pageYOffset === 0) {
-            e.preventDefault();
-          }
-        }, { passive: false });
-        
-        // Improve scrolling performance
-        document.addEventListener('touchmove', function(e) {
-          if (e.scale !== 1) {
-            e.preventDefault();
-          }
-        }, { passive: false });
+        /*
+         * The following handlers attempted to block pull-to-refresh and double
+         * tap zoom on mobile devices, but they also interfered with normal
+         * touch interactions, preventing navigation links from working on some
+         * phones. They have been disabled to restore default touch behavior.
+         *
+         * // Prevent pull-to-refresh
+         * let startY = 0;
+         * document.addEventListener('touchstart', function(e) {
+         *   startY = e.touches[0].pageY;
+         * }, { passive: true });
+         *
+         * document.addEventListener('touchmove', function(e) {
+         *   const y = e.touches[0].pageY;
+         *   if (startY <= 10 && y > startY && window.pageYOffset === 0) {
+         *     e.preventDefault();
+         *   }
+         * }, { passive: false });
+         *
+         * // Improve scrolling performance
+         * document.addEventListener('touchmove', function(e) {
+         *   if (e.scale !== 1) {
+         *     e.preventDefault();
+         *   }
+         * }, { passive: false });
+         */
         
         // Handle orientation change
         window.addEventListener('orientationchange', function() {
