@@ -87,11 +87,11 @@ export default function Leaderboard() {
       }
 
       // Get courses for the tour
-      const { data: coursesData } = await db.getCourses(tour.id);
+      const { data: coursesData } = await db.getCourses(tour?.id);
       setCourses(coursesData || []);
 
       // Get teams with members
-      const { data: teamsData } = await db.getTeams(tour.id);
+      const { data: teamsData } = await db.getTeams(tour?.id);
       
       if (!teamsData || teamsData.length === 0) {
         setLeaderboardData([]);
