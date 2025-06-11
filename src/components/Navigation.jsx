@@ -125,32 +125,13 @@ export default function Navigation({ current, onNavigate, onAuthClick }) {
               <ul className="nav-list">
                 {links.map(link => (
                   <li key={link.id}>
-                    {isMobile ? (
-                      // Mobile: Use button for better touch handling
-                      <button
-                        type="button"
-                        onClick={(e) => handleNavClick(link.id, e)}
-                        className={`nav-link${current === link.id ? ' active' : ''}`}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          width: '100%',
-                          textAlign: 'center',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {link.label}
-                      </button>
-                    ) : (
-                      // Desktop: Use anchor tag
-                      <a
-                        href={`#${link.id}`}
-                        onClick={(e) => handleNavClick(link.id, e)}
-                        className={`nav-link${current === link.id ? ' active' : ''}`}
-                      >
-                        {link.label}
-                      </a>
-                    )}
+                    <a
+                      href={`#${link.id}`}
+                      onClick={(e) => handleNavClick(link.id, e)}
+                      className={`nav-link${current === link.id ? ' active' : ''}`}
+                    >
+                      {link.label}
+                    </a>
                   </li>
                 ))}
                 <li className="auth-section">
