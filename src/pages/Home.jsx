@@ -1,14 +1,41 @@
 import React from 'react';
 import Countdown from '../components/Countdown';
 import Leaderboard from '../components/Leaderboard';
+import { useAuth } from '../components/AuthProvider';
 
 export default function Home() {
+  const { user } = useAuth();
+
+  const handleScorecardClick = () => {
+    window.location.hash = 'scorecard';
+  };
+
   return (
     <section className="page active" id="home">
       <div className="hero card">
         <div className="card__body">
           <h2>Welcome to our Portugal Golf Trip 2025!</h2>
           <p>Get ready for an unforgettable golfing adventure in the beautiful Algarve region of Portugal.</p>
+          
+          {/* Quick Link to Scorecard */}
+          {user && (
+            <div className="mt-8">
+              <button
+                onClick={handleScorecardClick}
+                className="btn btn--primary btn--lg"
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--space-8)',
+                  margin: '0 auto'
+                }}
+              >
+                <i className="fas fa-golf-ball"></i>
+                <span>Start Scoring Round</span>
+                <i className="fas fa-arrow-right"></i>
+              </button>
+            </div>
+          )}
         </div>
       </div>
       <Countdown />
