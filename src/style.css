@@ -707,6 +707,11 @@ main {
     position: relative;
 }
 
+/* Mobile auth button (visible on mobile header) */
+.mobile-auth-btn {
+    display: none;
+}
+
 .mobile-menu-btn:hover {
     background-color: var(--color-secondary);
 }
@@ -902,6 +907,12 @@ main {
         justify-content: center;
     }
 
+    /* Show mobile auth button */
+    .mobile-auth-btn {
+        display: flex;
+        align-items: center;
+    }
+
     /* Hide desktop nav */
     .desktop-nav {
         display: none;
@@ -915,6 +926,10 @@ main {
 
 /* Force mobile layout for devices with mobile user agents */
 .mobile-device .mobile-menu-btn {
+    display: flex;
+}
+
+.mobile-device .mobile-auth-btn {
     display: flex;
 }
 
