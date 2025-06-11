@@ -424,6 +424,14 @@ export default function Scorecard() {
     return lengths[holeNumber - 1] || 400;
   };
 
+  // Handle back to overview from mobile scorecard
+  const handleBackToOverview = () => {
+    setMobileView('overview');
+    setSelectedScore(null);
+    setEditMode(false);
+    setShowWarning(false);
+  };
+
   if (loading) {
     return (
       <section className="page active">
@@ -460,9 +468,9 @@ export default function Scorecard() {
           <div className="mobile-header">
             <button 
               className="mobile-back-btn"
-              onClick={() => setMobileView('overview')}
+              onClick={handleBackToOverview}
             >
-              <i className="fas fa-undo"></i>
+              <i className="fas fa-arrow-left"></i>
             </button>
             <div className="mobile-hole-info">
               <h2>HOLE {currentHole} | PAR {currentHoleData.par}</h2>
@@ -493,9 +501,9 @@ export default function Scorecard() {
         <div className="mobile-header">
           <button 
             className="mobile-back-btn"
-            onClick={() => setMobileView('overview')}
+            onClick={handleBackToOverview}
           >
-            <i className="fas fa-undo"></i>
+            <i className="fas fa-arrow-left"></i>
           </button>
         </div>
 
@@ -836,7 +844,7 @@ export default function Scorecard() {
             {selectedPlayers.length > 0 && (
               <div className="mt-8">
                 <h4 className="mb-4">Full Scorecard</h4>
-                <div className="overflow-x-auto">
+                <div className="table-container">
                   <table className="w-full text-sm border">
                     <thead>
                       <tr className="bg-gray-100">
